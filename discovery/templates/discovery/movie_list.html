@@ -1,0 +1,105 @@
+
+{% extends 'discovery/base.html' %}
+
+{% block title %}Book My Show | Movies{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div>
+        <p class="hero-tag">YOUR ENTERTAINMENT DESTINATION</p>
+        <h1>Lights. Camera.<br><span>Book your show.</span></h1>
+        <p>Discover the latest movies and book your next experience.</p>
+        <a href="#movies" class="hero-button">Explore Movies</a>
+    </div>
+    <div class="hero-decoration">🎬</div>
+</section>
+
+<section class="movie-section" id="movies">
+    <div class="section-heading">
+        <div>
+            <h2>Recommended Movies</h2>
+            <p>Find your next favourite movie</p>
+        </div>
+        <span class="movie-count">{{ matching_count }} movies</span>
+    </div>
+
+    <form method="get" class="filter-panel">
+        <input type="text" name="search"
+               placeholder="Search movies..."
+               value="{{ search }}">
+
+        <select name="genre">
+            <option value="">All Genres</option>
+            {% for genre in genres %}
+                <option value="{{ genre.id }}"
+                    {% if selected_genre == genre.id|stringformat:"s" %}selected{% endif %}>
+                    {{ genre.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <select name="language">
+            <option value="">All Languages</option>
+            {% for language in languages %}
+                <option value="{{ language.id }}"
+                    {% if selected_language == language.id|stringformat:"s" %}selected{% endif %}>
+                    {{ language.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <select name="sort">
+            <option value="newest" {% if selected_sort == "newest" %}selected{% endif %}>Newest</option>
+            <option value="popular" {% if selected_sort == "popular" %}selected{% endif %}>Popular</option>
+            <option value="rating" {% if selected_sort == "rating" %}selected{% endif %}>Top Rated</option>
+        </select>
+
+        <button type="submit">Apply Filters</button>
+    </form>
+
+    <div class="movie-grid">
+        {% for movie in page_obj %}
+        <article class="movie-card">
+            <div class="poster-wrap">
+                {% if movie.poster %}
+                    <img src="{{ movie.poster }}" alt="{{ movie.title }} poster">
+                {% else %}
+                    <div class="poster-placeholder">🎞️</div>
+                {% endif %}
+                <span class="certificate">{{ movie.age_certificate }}</span>
+            </div>
+
+            <div class="movie-info">
+                <div class="rating">★ {{ movie.average_rating|default:"Not rated"|floatformat:1 }}</div>
+                <h3>{{ movie.title }}</h3>
+                <p>{{ movie.duration }} min · {{ movie.genre.all|join:", " }}</p>
+                <p class="language-text">{{ movie.languages.all|join:", " }}</p>
+
+                {% if movie.trailer_url %}
+                    <a class="trailer-link" href="{{ movie.trailer_url }}" target="_blank" rel="noopener noreferrer">Watch Trailer ↗</a>
+                {% endif %}
+            </div>
+        </article>
+        {% empty %}
+            <div class="empty-state">
+                <h3>No movies found</h3>
+                <p>Try changing your search or filters.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&search={{ search }}&genre={{ selected_genre }}&language={{ selected_language }}&sort={{ selected_sort }}">← Previous</a>
+        {% endif %}
+
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&search={{ search }}&genre={{ selected_genre }}&language={{ selected_language }}&sort={{ selected_sort }}">Next →</a>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}

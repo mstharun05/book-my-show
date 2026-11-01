@@ -1,0 +1,53 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Book My Show{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'discovery/style.css' %}">
+</head>
+<body>
+
+<header class="topbar">
+    <a class="brand" href="/movies/">book<span>my</span>show</a>
+
+    <form class="search-box" action="/movies/" method="get">
+        <span>⌕</span>
+        <input type="text" name="search"
+               placeholder="Search for movies, events, plays..."
+               value="{{ search|default:'' }}">
+        <button type="submit">Search</button>
+    </form>
+
+    <div class="location">📍 Salem</div>
+    <a class="signin" href="/admin/">Sign in</a>
+</header>
+
+<nav class="subnav">
+    <div>
+        <a href="/movies/">Movies</a>
+        <a href="/movies/">Stream</a>
+        <a href="/movies/">Events</a>
+        <a href="/movies/">Plays</a>
+        <a href="/movies/">Sports</a>
+        <a href="/movies/">Activities</a>
+    </div>
+    <div>
+        <a href="/dashboard/">Admin Dashboard</a>
+    </div>
+</nav>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    <div class="footer-brand">book<span>my</span>show</div>
+    <p>Movies, entertainment and unforgettable experiences.</p>
+    <p>© 2026 Book My Show Project</p>
+</footer>
+
+</body>
+</html>

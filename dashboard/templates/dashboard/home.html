@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Book My Show Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f1f3f8;
+            padding: 30px;
+        }
+        h1 { color: #222; }
+        .cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            min-width: 180px;
+            box-shadow: 0 2px 8px #ddd;
+        }
+        a { color: #e63946; }
+    </style>
+</head>
+<body>
+
+<h1>BOOK MY SHOW - Admin Dashboard</h1>
+
+<div class="cards">
+    <div class="card">
+        <h3>Total Bookings</h3>
+        <h2>{{ total_bookings }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Total Revenue</h3>
+        <h2>₹{{ total_revenue }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Today's Revenue</h3>
+        <h2>₹{{ today_revenue }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Monthly Revenue</h3>
+        <h2>₹{{ monthly_revenue }}</h2>
+    </div>
+</div>
+
+<h2>Most Booked Movies</h2>
+
+{% for movie in popular_movies %}
+    <p>{{ movie.show__movie__title }} -
+       {{ movie.total }} bookings</p>
+{% empty %}
+    <p>No bookings yet.</p>
+{% endfor %}
+
+<a href="{% url 'export_csv' %}">Download Booking Report CSV</a>
+
+</body>
+</html>
