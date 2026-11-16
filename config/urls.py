@@ -1,3 +1,4 @@
+
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
@@ -8,4 +9,7 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
     path('movies/', include('discovery.urls')),
     path('tickets/', include('tickets.urls')),
+    path('bookings/', include('bookings.urls')),
+    path('payments/', include('payments.urls')),
+    path("movie-details/", include("movies.urls")),
 ]

@@ -1,7 +1,11 @@
 
+import re
+from urllib.parse import urlparse, parse_qs
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Avg
 
 
 class Genre(models.Model):
@@ -29,25 +33,82 @@ class CastMember(models.Model):
 
 class Movie(models.Model):
     AGE_CHOICES = [
-        ('U', 'U'),
-        ('UA', 'UA'),
-        ('A', 'A'),
-        ('S', 'S'),
+        ("U", "U"),
+        ("UA", "UA"),
+        ("A", "A"),
+        ("S", "S"),
     ]
 
     title = models.CharField(max_length=200)
     description = models.TextField()
+
     genre = models.ManyToManyField(Genre)
     languages = models.ManyToManyField(Language)
     cast = models.ManyToManyField(CastMember, blank=True)
+
     trailer_url = models.URLField(blank=True)
     poster = models.URLField(blank=True)
+
     age_certificate = models.CharField(
-        max_length=5, choices=AGE_CHOICES, default='U'
+        max_length=5,
+        choices=AGE_CHOICES,
+        default="U"
     )
-    duration = models.PositiveIntegerField(help_text="Duration in minutes")
+
+    duration = models.PositiveIntegerField(
+        help_text="Duration in minutes"
+    )
+
     release_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def average_rating(self):
+        result = self.reviews.aggregate(
+            average=Avg("rating")
+        )["average"]
+
+        return round(result or 0, 1)
+
+    @property
+    def trailer_embed_url(self):
+        if not self.trailer_url:
+            return ""
+
+        parsed = urlparse(self.trailer_url)
+        host = (parsed.hostname or "").lower()
+        video_id = ""
+
+        if parsed.scheme not in ("http", "https"):
+            return ""
+
+        if host in (
+            "youtube.com",
+            "www.youtube.com",
+            "m.youtube.com",
+            "www.youtube-nocookie.com",
+            "youtube-nocookie.com",
+        ):
+            if parsed.path == "/watch":
+                video_id = parse_qs(
+                    parsed.query
+                ).get("v", [""])[0]
+
+            elif parsed.path.startswith(("/embed/", "/shorts/")):
+                parts = parsed.path.strip("/").split("/")
+                if len(parts) == 2:
+                    video_id = parts[1]
+
+        elif host in ("youtu.be", "www.youtu.be"):
+            video_id = parsed.path.strip("/")
+
+        if not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+            return ""
+
+        return (
+            "https://www.youtube-nocookie.com/embed/"
+            f"{video_id}"
+        )
 
     def __str__(self):
         return self.title
@@ -55,34 +116,54 @@ class Movie(models.Model):
 
 class PosterImage(models.Model):
     movie = models.ForeignKey(
-        Movie, on_delete=models.CASCADE, related_name='posters'
+        Movie,
+        on_delete=models.CASCADE,
+        related_name="posters"
     )
+
     image_url = models.URLField()
 
     def __str__(self):
-        return self.movie.title
+        return f"{self.movie.title} - Poster #{self.pk}"
 
 
 class Review(models.Model):
     movie = models.ForeignKey(
-        Movie, on_delete=models.CASCADE, related_name='reviews'
+        Movie,
+        on_delete=models.CASCADE,
+        related_name="reviews"
     )
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+
     rating = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(5)
+        ]
     )
+
     comment = models.TextField()
+
     verified_viewer = models.BooleanField(default=False)
     reported = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['movie', 'user'],
-                name='one_review_per_movie_user'
+                fields=["movie", "user"],
+                name="one_review_per_movie_user"
             )
         ]
 
     def __str__(self):
-        return f"{self.user.username} - {self.movie.title}"
+        return (
+            f"{self.user.username} - "
+            f"{self.movie.title} ({self.rating}/5)"
+        )

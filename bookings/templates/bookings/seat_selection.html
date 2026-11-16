@@ -1,0 +1,85 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Book My Show | Select Seats</title>
+
+    <link rel="stylesheet"
+          href="{% static 'bookings/css/seats.css' %}">
+</head>
+
+<body>
+
+<form id="csrf-form" style="display:none;">
+    {% csrf_token %}
+</form>
+
+<header class="navbar">
+    <h1>BOOK<span>MY</span>SHOW</h1>
+    <a href="/movies/">Back to Movies</a>
+</header>
+
+<main class="container">
+
+    <section class="movie-info">
+        <h2 id="movie-title">{{ show.movie.title }}</h2>
+        <p>Select your preferred seats</p>
+
+        <div class="timer">
+            Reservation time:
+            <span id="timer">02:00</span>
+        </div>
+    </section>
+
+    <section class="seat-layout">
+
+        <div class="screen">
+            <div class="screen-shape"></div>
+            <p>ALL EYES THIS WAY</p>
+        </div>
+
+        <div id="seat-sections"></div>
+
+    </section>
+
+    <section class="legend">
+        <span><i class="available"></i> Available</span>
+        <span><i class="selected"></i> Selected</span>
+        <span><i class="reserved"></i> Reserved</span>
+        <span><i class="booked"></i> Booked</span>
+    </section>
+
+    <section class="booking-summary">
+
+        <div>
+            <p>Selected Seats</p>
+            <h3 id="selected-count">0 Seats</h3>
+        </div>
+
+        <div>
+            <p>Total Amount</p>
+            <h3>₹<span id="total-price">0</span></h3>
+        </div>
+
+        <button id="continue-btn" disabled>
+            Continue
+        </button>
+
+    </section>
+
+</main>
+
+<script>
+    const SHOW_ID = {{ show.id }};
+    const TICKET_PRICE = Number("{{ show.ticket_price }}");
+</script>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{% static 'bookings/js/seats.js' %}"></script>
+
+</body>
+</html>

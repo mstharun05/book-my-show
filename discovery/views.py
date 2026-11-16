@@ -1,50 +1,101 @@
 
-from django.shortcuts import render
-from django.db.models import Avg, Count, Q
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Q, Avg, Count, Prefetch
 from django.core.paginator import Paginator
+from django.utils import timezone
+
 from movies.models import Movie, Genre, Language
+from bookings.models import Show
 
 
 def movie_list(request):
 
-    movies = Movie.objects.annotate(
-        average_rating=Avg('reviews__rating'),
-        popularity=Count('reviews')
+    search = request.GET.get("search", "").strip()
+    selected_genre = request.GET.get("genre", "").strip()
+    selected_language = request.GET.get("language", "").strip()
+    selected_sort = request.GET.get("sort", "newest").strip()
+
+    movies = Movie.objects.all()
+
+    # Search movies
+    if search:
+        movies = movies.filter(
+            Q(title__icontains=search) |
+            Q(description__icontains=search)
+        )
+
+    # Filter by genre ID
+    if selected_genre:
+        movies = movies.filter(genre__id=selected_genre)
+
+    # Filter by language ID
+    if selected_language:
+        movies = movies.filter(languages__id=selected_language)
+
+    # Avoid conflict with Movie.average_rating property
+    movies = movies.annotate(
+        calculated_rating=Avg("reviews__rating"),
+        booking_count=Count(
+            "show__booking",
+            filter=Q(show__booking__status="CONFIRMED"),
+            distinct=True
+        )
     ).distinct()
 
-    search = request.GET.get('search', '')
-    genre = request.GET.get('genre', '')
-    language = request.GET.get('language', '')
-    sorting = request.GET.get('sort', 'newest')
+    # Sorting
+    if selected_sort == "rating":
+        movies = movies.order_by(
+            "-calculated_rating",
+            "-release_date"
+        )
 
-    if search:
-        movies = movies.filter(title__icontains=search)
+    elif selected_sort == "popular":
+        movies = movies.order_by(
+            "-booking_count",
+            "-release_date"
+        )
 
-    if genre:
-        movies = movies.filter(genre__id=genre)
+    else:
+        selected_sort = "newest"
+        movies = movies.order_by(
+            "-release_date",
+            "-created_at"
+        )
 
-    if language:
-        movies = movies.filter(languages__id=language)
+    # Load movie genres, languages and upcoming shows
+    movies = movies.prefetch_related(
+        "genre",
+        "languages",
+        Prefetch(
+            "show_set",
+            queryset=Show.objects.filter(
+                show_time__gte=timezone.now()
+            ).order_by("show_time"),
+            to_attr="upcoming_shows"
+        )
+    )
 
-    if sorting == 'rating':
-        movies = movies.order_by('-average_rating')
+    # Pagination
+    matching_count = movies.count()
+    paginator = Paginator(movies, 8)
+    page_obj = paginator.get_page(
+        request.GET.get("page")
+    )
 
-    elif sorting == 'popular':
-        movies = movies.order_by('-popularity')
+    context = {
+        "page_obj": page_obj,
+        "movies": page_obj,
+        "matching_count": matching_count,
+        "genres": Genre.objects.all().order_by("name"),
+        "languages": Language.objects.all().order_by("name"),
+        "search": search,
+        "selected_genre": selected_genre,
+        "selected_language": selected_language,
+        "selected_sort": selected_sort,
+    }
 
-    elif sorting == 'newest':
-        movies = movies.order_by('-release_date')
-
-    paginator = Paginator(movies, 6)
-    page_obj = paginator.get_page(request.GET.get('page'))
-
-    return render(request, 'discovery/movie_list.html', {
-        'page_obj': page_obj,
-        'genres': Genre.objects.all(),
-        'languages': Language.objects.all(),
-        'search': search,
-        'selected_genre': genre,
-        'selected_language': language,
-        'selected_sort': sorting,
-        'matching_count': paginator.count,
-    })
+    return render(
+        request,
+        "discovery/movie_list.html",
+        context
+    )

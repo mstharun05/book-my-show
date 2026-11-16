@@ -72,12 +72,25 @@
 
             <div class="movie-info">
                 <div class="rating">★ {{ movie.average_rating|default:"Not rated"|floatformat:1 }}</div>
-                <h3>{{ movie.title }}</h3>
+                <h3>
+                    <a href="{% url 'discovery:movie_detail' movie.id %}">
+                        {{ movie.title }}
+                    </a>
+                </h3>
                 <p>{{ movie.duration }} min · {{ movie.genre.all|join:", " }}</p>
                 <p class="language-text">{{ movie.languages.all|join:", " }}</p>
 
                 {% if movie.trailer_url %}
                     <a class="trailer-link" href="{{ movie.trailer_url }}" target="_blank" rel="noopener noreferrer">Watch Trailer ↗</a>
+                {% endif %}
+
+                {% if movie.upcoming_shows %}
+                    <a class="book-ticket-btn"
+                        href="{% url 'bookings:seat_selection' movie.upcoming_shows.0.id %}">
+                        Book Tickets →
+                    </a>
+                {% else %}
+                    <span class="coming-soon">No Upcoming Shows</span>
                 {% endif %}
             </div>
         </article>

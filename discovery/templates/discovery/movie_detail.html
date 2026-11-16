@@ -1,0 +1,107 @@
+
+{% extends 'discovery/base.html' %}
+
+{% block title %}{{ movie.title }} | Book My Show{% endblock %}
+
+{% block content %}
+
+<section class="movie-detail">
+
+    <div class="detail-poster">
+        {% if movie.poster %}
+            <img src="{{ movie.poster }}" alt="{{ movie.title }}">
+        {% else %}
+            <div class="poster-placeholder">🎬</div>
+        {% endif %}
+    </div>
+
+    <div class="detail-content">
+        <h1>{{ movie.title }}</h1>
+
+        <div class="rating">
+            ★
+            {% if average_rating %}
+                {{ average_rating|floatformat:1 }}/5
+            {% else %}
+                Not rated yet
+            {% endif %}
+        </div>
+
+        <p>
+            {{ movie.duration }} minutes |
+            {{ movie.age_certificate }} |
+            {{ movie.release_date }}
+        </p>
+
+        <p><strong>Genres:</strong> {{ movie.genre.all|join:", " }}</p>
+        <p><strong>Languages:</strong> {{ movie.languages.all|join:", " }}</p>
+
+        <h3>About the movie</h3>
+        <p>{{ movie.description }}</p>
+
+        {% if movie.trailer_url %}
+            <a href="{{ movie.trailer_url }}" target="_blank"
+               rel="noopener noreferrer" class="hero-button">
+                Watch Trailer
+            </a>
+        {% endif %}
+    </div>
+
+</section>
+
+<section class="movie-section">
+    <h2>Cast</h2>
+    <div class="cast-list">
+        {% for member in movie.cast.all %}
+            <div class="cast-member">
+                {% if member.photo %}
+                    <img src="{{ member.photo }}" alt="{{ member.name }}">
+                {% endif %}
+                <p>{{ member.name }}</p>
+            </div>
+        {% empty %}
+            <p>Cast information not available.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="movie-section">
+    <h2>Book Tickets</h2>
+
+    {% for show in shows %}
+        <div class="show-card">
+            <h3>{{ show.screen.theater.name }}</h3>
+            <p>{{ show.screen.theater.city }}</p>
+            <p>{{ show.screen.name }}</p>
+            <p>{{ show.show_time|date:"d M Y, h:i A" }}</p>
+            <p>₹{{ show.ticket_price }}</p>
+
+            <a href="{% url 'bookings:seat_selection' show.id %}"
+               class="hero-button">
+                Select Seats
+            </a>
+        </div>
+    {% empty %}
+        <p>No upcoming shows available for this movie.</p>
+    {% endfor %}
+</section>
+
+<section class="movie-section">
+    <h2>Reviews and Ratings</h2>
+
+    {% for review in reviews %}
+        <div class="review-card">
+            <h3>{{ review.user.username }}</h3>
+            <p>★ {{ review.rating }}/5</p>
+            <p>{{ review.comment }}</p>
+
+            {% if review.verified_viewer %}
+                <span>✓ Verified Viewer</span>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No reviews yet.</p>
+    {% endfor %}
+</section>
+
+{% endblock %}

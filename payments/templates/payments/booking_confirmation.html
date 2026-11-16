@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed | Book My Show</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 30px 15px;
+            background: #101014;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .confirmation {
+            max-width: 650px;
+            margin: 40px auto;
+            padding: 30px;
+            background: #1b1b22;
+            border-radius: 15px;
+        }
+        .success {
+            color: #55c79b;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        h1 { color: #f84464; }
+        .details {
+            padding: 15px 0;
+            border-bottom: 1px solid #393943;
+        }
+        .details p { color: #ddd; line-height: 1.7; }
+        .home {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 13px 22px;
+            background: #f84464;
+            color: white;
+            text-decoration: none;
+            border-radius: 7px;
+        }
+    </style>
+</head>
+<body>
+    <div class="confirmation">
+        <p class="success">✓ PAYMENT SUCCESSFUL</p>
+        <h1>Booking Confirmed!</h1>
+
+        <div class="details">
+            <p><strong>Booking ID:</strong> {{ booking.id }}</p>
+            <p><strong>Movie:</strong> {{ booking.show.movie.title }}</p>
+            <p><strong>Theater:</strong> {{ booking.show.screen.theater.name }}</p>
+            <p><strong>City:</strong> {{ booking.show.screen.theater.city }}</p>
+            <p><strong>Screen:</strong> {{ booking.show.screen.name }}</p>
+            <p><strong>Show Time:</strong> {{ booking.show.show_time|date:"d M Y, h:i A" }}</p>
+            <p><strong>Seats:</strong>
+                {% for item in seats %}
+                    {{ item.seat.seat_number }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    Not available
+                {% endfor %}
+            </p>
+            <p><strong>Amount Paid:</strong>
+                {% if payment %}₹{{ payment.amount }}{% else %}Not available{% endif %}
+            </p>
+            <p><strong>Booking Status:</strong> {{ booking.get_status_display }}</p>
+        </div>
+
+        <a href="/movies/" class="home">Back to Movies</a>
+    </div>
+</body>
+</html>

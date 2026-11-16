@@ -1,0 +1,274 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ movie.title }} | Book My Show</title>
+
+<style>
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    color: #222;
+}
+header {
+    background: #202127;
+    padding: 18px 6%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+header h2 { color: #f84464; margin: 0; }
+header a { color: white; text-decoration: none; }
+.container { max-width: 1100px; margin: auto; padding: 25px; }
+.hero {
+    display: flex;
+    gap: 30px;
+    background: #292a32;
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+}
+.poster {
+    width: 250px;
+    max-width: 100%;
+    border-radius: 10px;
+    object-fit: cover;
+}
+.details { flex: 1; }
+.rating { font-size: 22px; color: #ffcc55; }
+.btn {
+    display: inline-block;
+    background: #f84464;
+    color: white;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 7px;
+    text-decoration: none;
+    cursor: pointer;
+}
+section {
+    background: white;
+    padding: 24px;
+    margin-top: 22px;
+    border-radius: 12px;
+}
+iframe { width: 100%; aspect-ratio: 16/9; border: 0; }
+.gallery, .cards {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+.gallery img { width: 160px; border-radius: 8px; }
+.card {
+    width: 170px;
+    text-decoration: none;
+    color: #222;
+}
+.card img {
+    width: 100%;
+    height: 230px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+.review {
+    border-bottom: 1px solid #ddd;
+    padding: 15px 0;
+}
+.badge {
+    color: #16803c;
+    font-weight: bold;
+}
+input, textarea, select {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    padding: 12px;
+    margin: 10px 0;
+}
+.message { color: #c62828; }
+@media(max-width: 650px) {
+    .hero { flex-direction: column; }
+}
+</style>
+</head>
+
+<body>
+<header>
+    <h2>BOOK MY SHOW</h2>
+    <a href="/movies/">Back to Movies</a>
+</header>
+
+<main class="container">
+
+{% for message in messages %}
+<p class="message">{{ message }}</p>
+{% endfor %}
+
+<div class="hero">
+    {% if movie.poster %}
+    <img class="poster" src="{{ movie.poster }}" alt="{{ movie.title }}">
+    {% endif %}
+
+    <div class="details">
+        <h1>{{ movie.title }}</h1>
+        <p class="rating">★ {{ movie.average_rating }}/5</p>
+
+        <p><strong>Certificate:</strong> {{ movie.age_certificate }}</p>
+        <p><strong>Duration:</strong> {{ movie.duration }} minutes</p>
+        <p><strong>Release:</strong> {{ movie.release_date }}</p>
+
+        <p><strong>Genres:</strong>
+        {% for genre in movie.genre.all %}
+            {{ genre.name }}
+        {% endfor %}
+        </p>
+
+        <p><strong>Languages:</strong>
+        {% for language in movie.languages.all %}
+            {{ language.name }}
+        {% endfor %}
+        </p>
+
+        <p>{{ movie.description }}</p>
+
+        <a class="btn" href="/movies/">Book Tickets</a>
+    </div>
+</div>
+
+{% if movie.trailer_embed_url %}
+<section>
+    <h2>Watch Trailer</h2>
+    <iframe
+        src="{{ movie.trailer_embed_url }}"
+        title="{{ movie.title }} Trailer"
+        allowfullscreen
+        referrerpolicy="strict-origin-when-cross-origin">
+    </iframe>
+</section>
+{% endif %}
+
+<section>
+    <h2>Cast Members</h2>
+    {% for actor in movie.cast.all %}
+        <p>{{ actor.name }}</p>
+    {% empty %}
+        <p>Cast details coming soon.</p>
+    {% endfor %}
+</section>
+
+<section>
+    <h2>Movie Posters</h2>
+    <div class="gallery">
+    {% for image in movie.posters.all %}
+        <img src="{{ image.image_url }}" alt="{{ movie.title }} poster">
+    {% empty %}
+        <p>No additional posters uploaded.</p>
+    {% endfor %}
+    </div>
+</section>
+
+<section>
+    <h2>Reviews and Ratings</h2>
+    <p>Average Rating: ★ {{ movie.average_rating }}/5</p>
+
+    {% if can_review %}
+    <h3>{% if user_review %}Edit Your Review{% else %}Write a Review{% endif %}</h3>
+
+    <form method="post" action="{% url 'movies:submit_review' movie.id %}">
+        {% csrf_token %}
+
+        <label>Rating</label>
+        <select name="rating" required>
+            {% for value in "12345" %}
+            <option value="{{ value }}"
+                {% if user_review.rating|stringformat:"s" == value %}selected{% endif %}>
+                {{ value }} Star
+            </option>
+            {% endfor %}
+        </select>
+
+        <label>Your Review</label>
+        <textarea name="comment" rows="4" required>{% if user_review %}{{ user_review.comment }}{% endif %}</textarea>
+
+        <button class="btn" type="submit">Save Review</button>
+    </form>
+    {% else %}
+    <p>Only registered users who have booked and watched this movie can review it.</p>
+    {% endif %}
+
+    {% for review in reviews %}
+    <div class="review">
+        <strong>{{ review.user.username }}</strong>
+        {% if review.verified_viewer %}
+            <span class="badge">✓ Verified Viewer</span>
+        {% endif %}
+        <p>★ {{ review.rating }}/5</p>
+        <p>{{ review.comment }}</p>
+
+        {% if user.is_authenticated and user != review.user %}
+        <form method="post" action="{% url 'movies:report_review' review.id %}">
+            {% csrf_token %}
+            <button type="submit">Report Review</button>
+        </form>
+        {% endif %}
+    </div>
+    {% empty %}
+    <p>No reviews yet. Be the first eligible viewer to review.</p>
+    {% endfor %}
+</section>
+
+<section>
+    <h2>Similar Movies</h2>
+    <div class="cards">
+    {% for item in similar_movies %}
+        <a class="card" href="{% url 'movies:movie_detail' item.id %}">
+            {% if item.poster %}
+            <img src="{{ item.poster }}" alt="{{ item.title }}">
+            {% endif %}
+            <h3>{{ item.title }}</h3>
+        </a>
+    {% empty %}
+        <p>No similar movies available.</p>
+    {% endfor %}
+    </div>
+</section>
+
+<section>
+    <h2>Trending Movies</h2>
+    <div class="cards">
+    {% for item in trending_movies %}
+        <a class="card" href="{% url 'movies:movie_detail' item.id %}">
+            {% if item.poster %}
+            <img src="{{ item.poster }}" alt="{{ item.title }}">
+            {% endif %}
+            <h3>{{ item.title }}</h3>
+        </a>
+    {% empty %}
+        <p>No trending movies available.</p>
+    {% endfor %}
+    </div>
+</section>
+
+<section>
+    <h2>Recently Released</h2>
+    <div class="cards">
+    {% for item in recent_movies %}
+        <a class="card" href="{% url 'movies:movie_detail' item.id %}">
+            {% if item.poster %}
+            <img src="{{ item.poster }}" alt="{{ item.title }}">
+            {% endif %}
+            <h3>{{ item.title }}</h3>
+        </a>
+    {% empty %}
+        <p>No recently released movies available.</p>
+    {% endfor %}
+    </div>
+</section>
+
+</main>
+</body>
+</html>
