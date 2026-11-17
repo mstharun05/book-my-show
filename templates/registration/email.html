@@ -1,6 +1,6 @@
 {% extends "discovery/base.html" %}
 {% block content %}
-<section style="max-width:600px;margin:3rem auto;padding:1rem">
+<section class="account-panel">
 <h1>Ticket email address</h1>
 <p>Booking confirmations and PDF tickets are sent to this address. Pending deliveries will retry automatically.</p>
 <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Save email address</button></form>

@@ -556,3 +556,61 @@ footer p {
 .experience-detail .signin { display:inline-block; margin-top:16px; }
 .experience-description { max-width:850px; margin:20px 0; }
 @media(max-width:650px) { .experience-detail { flex-direction:column; } .experience-detail img { width:100%; } .catalog-heading { padding:22px; } .subnav { overflow-x:auto; } .subnav > div { white-space:nowrap; } }
+
+/* Consistent readable forms, profile cards and small-screen spacing. */
+body { min-height:100vh; display:flex; flex-direction:column; }
+main { flex:1; min-width:0; }
+a { color:#ff9bb0; text-underline-offset:3px; }
+button, input, select, textarea { font:inherit; }
+button, .signin { border:0; cursor:pointer; }
+:focus-visible { outline:3px solid #ffbdcb; outline-offset:4px; }
+.topbar > a:not(.brand) { white-space:nowrap; }
+.topbar > form:not(.search-box) { flex-shrink:0; }
+.movie-section { margin-top:32px; }
+.movie-section > h1 { font-size:clamp(28px,4vw,38px); margin-bottom:22px; }
+.filter-panel label { flex:1 1 175px; min-width:0; font-size:13px; color:#d5d7e1; }
+.filter-panel label input, .filter-panel label select { width:100%; min-width:0; font-size:14px; }
+.filter-panel > a { padding:12px 4px; }
+.profile-shell { width:min(100% - 32px,1000px); margin:36px auto; }
+.profile-shell h1 { font-size:clamp(25px,4vw,36px); overflow-wrap:anywhere; }
+.profile-shell > p { margin:12px 0 28px; overflow-wrap:anywhere; }
+.profile-shell > h2 { margin-bottom:20px; }
+.booking-history-card { background:var(--surface); color:#f5f6fa; border:1px solid #383b4a; border-radius:14px; padding:24px; margin-bottom:20px; overflow-wrap:anywhere; }
+.booking-history-card h3 { font-size:21px; margin-bottom:12px; }
+.booking-history-card h4 { padding-top:18px; margin-top:18px; border-top:1px solid #383b4a; }
+.booking-history-card p { color:#c6cad6; margin:8px 0; }
+.booking-history-card a { display:inline-block; margin:8px 0; font-weight:600; }
+.account-panel { width:min(100% - 32px,520px); margin:48px auto; padding:32px; border:1px solid #383b4a; border-radius:16px; background:var(--surface); box-shadow:0 16px 45px #0003; }
+.account-panel h1 { font-size:29px; margin-bottom:20px; }
+.account-panel form p { margin:18px 0; }
+.account-panel label { display:block; margin-bottom:7px; font-weight:600; }
+.account-panel input:not([type=hidden]) { display:block; width:100%; min-width:0; padding:12px 14px; background:#252733; border:1px solid #55596b; color:white; border-radius:8px; }
+.account-panel button { width:100%; padding:13px; border-radius:8px; color:white; background:#d52e50; font-weight:bold; margin:8px 0 20px; }
+.account-panel .helptext, .account-panel ul { display:block; color:#bfc4d2; font-size:13px; margin-top:8px; }
+.account-panel ul { padding-left:20px; }
+.account-panel .errorlist { color:#ffadba; border-left:3px solid #f84464; padding:8px 8px 8px 24px; }
+.catalog-pagination, .pagination { flex-wrap:wrap; }
+.catalog-grid { grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr)); }
+@media(max-width:750px) {
+    .topbar { padding:16px 4%; gap:14px; }
+    .topbar .location { display:none; }
+    .topbar .brand { font-size:25px; margin-right:auto; }
+    .topbar .signin { padding:9px 12px; font-size:14px; }
+    .search-box { max-width:none; }
+    .subnav { padding:12px 4%; }
+    .subnav > div { flex-wrap:nowrap; overflow-x:auto; gap:22px; padding:4px 0 8px; }
+    .subnav a { white-space:nowrap; flex-shrink:0; }
+    .account-panel { padding:24px; margin:28px auto; }
+    .booking-history-card { padding:20px; }
+}
+@media(max-width:380px) {
+    .filter-panel label { min-width:0 !important; flex-basis:100%; }
+    .movie-grid { grid-template-columns:minmax(0,1fr); }
+    .poster-wrap { height:350px; }
+    .topbar { gap:10px; }
+    .topbar > a:not(.brand) { font-size:13px; }
+}
+@media(prefers-reduced-motion:reduce) {
+    html { scroll-behavior:auto; }
+    *, *::before, *::after { transition:none !important; animation:none !important; }
+}

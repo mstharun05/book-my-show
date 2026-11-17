@@ -174,3 +174,21 @@ body {
     background: #aaa;
     cursor: not-allowed;
 }
+
+button, a { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline:3px solid #9f1741; outline-offset:4px; }
+.navbar { gap:20px; flex-wrap:wrap; }
+.booking-summary > div { min-width:0; overflow-wrap:anywhere; }
+.seat { min-height:44px; min-width:44px; font-weight:600; }
+.seat.booked { color:#454545; }
+@media(max-width:600px) {
+    .navbar { padding:16px; gap:12px 20px; }
+    .navbar h1 { flex-basis:100%; font-size:25px; }
+    .container { padding:12px; margin:18px auto; }
+    .seat-layout { padding:24px 10px; }
+    .seat-row { gap:7px; }
+    .booking-summary { flex-wrap:wrap; padding:18px; }
+    .booking-summary > div { flex:1 1 40%; }
+    #continue-btn { width:100%; min-height:48px; }
+    .legend { gap:12px; font-size:14px; }
+}

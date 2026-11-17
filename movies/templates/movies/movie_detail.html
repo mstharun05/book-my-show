@@ -92,7 +92,17 @@ input, textarea, select {
 .message { color: #c62828; }
 @media(max-width: 650px) {
     .hero { flex-direction: column; }
+    header { flex-wrap: wrap; gap: 14px; }
+    header h2 { flex-basis: 100%; }
+    .container { padding: 14px; }
+    section, .hero { padding: 20px; }
+    .details { min-width: 0; overflow-wrap: anywhere; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card { width: auto; }
+    .card img { height: 200px; }
+    #showtimes .btn { display: block; margin-top: 12px; text-align: center; }
 }
+:focus-visible { outline: 3px solid #af1640; outline-offset: 4px; }
 </style>
 </head>
 

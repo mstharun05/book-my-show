@@ -53,6 +53,7 @@ class PaymentVerificationTests(TestCase):
         self.assertEqual(self.booking.showseat_set.get().status, "BOOKED")
         self.assertEqual(Payment.objects.get().status, "SUCCESS")
         self.assertEqual(self.client.get(f"/payments/confirmation/{self.booking.pk}/").status_code, 200)
+        self.assertContains(self.client.get(f"/payments/confirmation/{self.booking.pk}/"), '₹200.00')
 
     def test_order_creation_reuses_order(self):
         self.assertEqual(self.client.post(f"/payments/create/{self.booking.pk}/").status_code, 200)

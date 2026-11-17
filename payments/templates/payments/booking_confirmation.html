@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Confirmed | Book My Show</title>
     <style>
+        * { box-sizing: border-box; }
+        a { color: #ff9bb0; }
+        :focus-visible { outline: 3px solid #ffbdcb; outline-offset: 4px; }
         body {
             margin: 0;
             padding: 30px 15px;
@@ -14,6 +17,7 @@
             font-family: Arial, sans-serif;
         }
         .confirmation {
+            overflow-wrap: anywhere;
             max-width: 650px;
             margin: 40px auto;
             padding: 30px;
@@ -39,6 +43,13 @@
             color: white;
             text-decoration: none;
             border-radius: 7px;
+        }
+        @media(max-width: 480px) {
+            body { padding: 16px; }
+            .confirmation { margin: 16px auto; padding: 22px; }
+            h1 { font-size: 28px; }
+            .success { font-size: 17px; }
+            .home { display: block; text-align: center; margin-top: 14px; }
         }
     </style>
 </head>

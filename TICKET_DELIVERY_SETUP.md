@@ -42,6 +42,12 @@ For local Windows testing use `worker --pool=solo --loglevel=INFO`. Deploy produ
 
 ## Reliability and operation
 
+### Free deployment with this computer as the worker
+
+Run `venv/Scripts/pythonw.exe scripts/configure_live_worker.py` to save masked Gmail and production PostgreSQL settings into ignored `tmp/live-worker.json`. The database must be the same PostgreSQL database used by the live web service, with external connectivity allowed for this computer. The SECRET_KEY must match Render. Do not copy an internal-only Render database URL.
+
+Run `venv/Scripts/python.exe scripts/check_live_worker.py` to validate database connectivity and Gmail authentication without sending mail. Then run `venv/Scripts/python.exe scripts/start_live_worker.py` to start a separate solo worker and scheduler. They use the production database for the durable delivery outbox and a separate local SQLite Celery broker. They do not migrate or seed the production database. Keep this computer awake and online, and restart these processes after reboot. Inspect `tmp/live-celery-worker.log` and `tmp/live-celery-beat.log` for readiness/errors. A successfully launched process is not proof of email delivery; confirm the delivery's `sent_at` and recipient inbox.
+
 Delivery claims use an atomic database update and a ten-minute lease. Concurrent jobs and already-sent jobs skip processing. Failed attempts retain the PDF and use durable exponential backoff, starting at 30 seconds and capped at one hour. Beat retries indefinitely, including after broker outages. A crashed worker's lease expires automatically. Delivery state, attempt count and error class are visible in Django Admin under Ticket deliveries. Fix missing addresses through the user's profile; pending deliveries will retry.
 
 SMTP delivery is at-least-once: a worker crash after SMTP acceptance but before recording success can resend a message. A stable Message-ID is included, but SMTP cannot guarantee exactly-once delivery. SMTP acceptance also does not guarantee inbox placement. Payment and booking idempotency remain independent of email delivery.

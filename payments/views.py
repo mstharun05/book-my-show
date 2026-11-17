@@ -234,7 +234,8 @@ def booking_confirmation(request, booking_id):
         "payments/booking_confirmation.html",
         {
             "booking": booking,
-            "seats": seats
+            "seats": seats,
+            "payment": booking.payments.filter(status="SUCCESS").first(),
         }
     )
 

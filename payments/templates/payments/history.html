@@ -1,12 +1,12 @@
 {% extends "discovery/base.html" %}
 {% block title %}My profile | Book My Show{% endblock %}
 {% block content %}
-<section style="max-width:1000px;margin:2rem auto;padding:1rem">
+<section class="profile-shell">
 <h1>{{ user.username }}'s profile</h1>
 <p>Ticket email: {{ user.email|default:"Not set" }} · <a href="{% url 'account_email' %}">Update email address</a></p>
 <h2>Bookings and payments</h2>
 {% for booking in page %}
-<article style="background:white;border:1px solid #ddd;border-radius:10px;padding:1.5rem;margin-bottom:1rem;overflow-wrap:anywhere">
+<article class="booking-history-card">
     <h3>{{ booking.show.movie.title }} · Booking #{{ booking.id }}</h3>
     <p>{{ booking.show.screen.theater.name }} · {{ booking.show.screen.name }} · {{ booking.show.show_time }}</p>
     <p>{{ booking.get_status_display }} · {{ booking.created_at }}</p>
@@ -37,7 +37,7 @@
 {% empty %}
 <p>Your bookings and payments will appear here.</p>
 {% endfor %}
-<nav aria-label="History pages">
+<nav class="pagination" aria-label="History pages">
 {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}
 <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
 {% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next</a>{% endif %}
