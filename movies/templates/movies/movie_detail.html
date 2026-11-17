@@ -100,6 +100,7 @@ input, textarea, select {
 <header>
     <h2>BOOK MY SHOW</h2>
     <a href="/movies/">Back to Movies</a>
+    <a href="{% url 'payments:history' %}">My profile</a>
 </header>
 
 <main class="container">
@@ -133,11 +134,24 @@ input, textarea, select {
         {% endfor %}
         </p>
 
-        <p>{{ movie.description }}</p>
+        <p>{{ movie.description|linebreaksbr }}</p>
 
-        <a class="btn" href="/movies/">Book Tickets</a>
+        <a class="btn" href="#showtimes">Showtimes</a>
     </div>
 </div>
+
+<section id="showtimes">
+    <h2>Showtimes</h2>
+    {% for show in upcoming_shows %}
+        <p>
+            {{ show.screen.theater.name }} · {{ show.screen.theater.city }} ·
+            {{ show.screen.name }} · {{ show.show_time|date:"D, j M, g:i A" }}
+            <a class="btn" href="{% url 'bookings:seat_selection' show.id %}">Book Tickets</a>
+        </p>
+    {% empty %}
+        <p>No upcoming shows.</p>
+    {% endfor %}
+</section>
 
 {% if movie.trailer_embed_url %}
 <section>
@@ -145,6 +159,7 @@ input, textarea, select {
     <iframe
         src="{{ movie.trailer_embed_url }}"
         title="{{ movie.title }} Trailer"
+        loading="lazy"
         allowfullscreen
         referrerpolicy="strict-origin-when-cross-origin">
     </iframe>
@@ -181,8 +196,8 @@ input, textarea, select {
     <form method="post" action="{% url 'movies:submit_review' movie.id %}">
         {% csrf_token %}
 
-        <label>Rating</label>
-        <select name="rating" required>
+        <label for="review-rating">Rating</label>
+        <select id="review-rating" name="rating" required>
             {% for value in "12345" %}
             <option value="{{ value }}"
                 {% if user_review.rating|stringformat:"s" == value %}selected{% endif %}>
@@ -191,11 +206,13 @@ input, textarea, select {
             {% endfor %}
         </select>
 
-        <label>Your Review</label>
-        <textarea name="comment" rows="4" required>{% if user_review %}{{ user_review.comment }}{% endif %}</textarea>
+        <label for="review-comment">Your Review</label>
+        <textarea id="review-comment" name="comment" rows="4" required>{% if user_review %}{{ user_review.comment }}{% endif %}</textarea>
 
         <button class="btn" type="submit">Save Review</button>
     </form>
+    {% elif not user.is_authenticated %}
+    <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Sign in</a> to review after attending a booked show.</p>
     {% else %}
     <p>Only registered users who have booked and watched this movie can review it.</p>
     {% endif %}

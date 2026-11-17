@@ -1,0 +1,34 @@
+{% extends 'discovery/base.html' %}
+{% block title %}{{ category_title }} | Book My Show{% endblock %}
+{% block content %}
+<section class="catalog-shell">
+  <div class="catalog-heading"><p class="catalog-eyebrow">DISCOVER SOMETHING NEW</p><h1>{{ category_title }}</h1>
+  {% if category == 'stream' %}<p>Watch official movie trailers and explore your next cinema experience. Full movies are not available for streaming.</p>
+  {% elif category == 'events' %}<p>Concerts, comedy, festivals and live experiences near you.</p>
+  {% elif category == 'plays' %}<p>Discover live theater, storytelling and performances.</p>
+  {% elif category == 'sports' %}<p>Find upcoming matches and sporting experiences.</p>
+  {% else %}<p>Workshops, adventures and new ways to spend your day.</p>{% endif %}</div>
+  <form method="get" class="catalog-filters">
+    <label>Search {{ category_title|lower }}<input name="q" value="{{ q }}" placeholder="Search by title" maxlength="200"></label>
+    {% if category != 'stream' %}<label>City<input name="city" value="{{ city }}" placeholder="Any city" maxlength="100"></label>{% endif %}
+    <button class="signin" type="submit">Find experiences</button><a href="{% url 'entertainment_category' category %}">Reset</a>
+  </form>
+  <p class="catalog-count">{{ page.paginator.count }} result{{ page.paginator.count|pluralize }}</p>
+  <div class="catalog-grid">
+  {% for item in page %}
+    <article class="catalog-card">
+      <a href="{% if category == 'stream' %}{% url 'discovery:movie_detail' item.pk %}{% else %}{% url 'experience_detail' item.pk %}{% endif %}">
+        {% if item.poster %}<img src="{{ item.poster }}" alt="{{ item.title }}" loading="lazy">{% else %}<div class="catalog-art">{{ category_title }}<span>{{ item.title }}</span></div>{% endif %}
+        <div class="catalog-card-body"><h2>{{ item.title }}</h2>
+        {% if category == 'stream' %}<p>{{ item.duration }} min · {{ item.age_certificate }}</p><span class="catalog-action">Watch trailer →</span>
+        {% else %}<p>{{ item.starts_at|date:'D, d M · g:i A' }}</p><p>{{ item.venue }} · {{ item.city }}</p><p>{% if item.price %}From ₹{{ item.price }}{% else %}Free entry{% endif %}</p><span class="catalog-action">View details →</span>{% endif %}</div>
+      </a>
+    </article>
+  {% empty %}
+    <div class="catalog-empty"><h2>{% if q or city %}No matching results{% else %}New {{ category_title|lower }} are on the way{% endif %}</h2><p>{% if q or city %}Try another title or city, or reset your filters.{% else %}There are no published upcoming listings in this category yet. Check back for updates.{% endif %}</p>
+    {% if perms.discovery.add_experience and category != 'stream' %}<a class="signin" href="{% url 'admin:discovery_experience_add' %}">Add a listing</a>{% endif %}<a href="/movies/">Explore movies</a></div>
+  {% endfor %}
+  </div>
+  {% if page.paginator.num_pages > 1 %}<nav class="catalog-pagination" aria-label="Results pages">{% if page.has_previous %}<a href="?{{ query }}&page={{ page.previous_page_number }}">← Previous</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?{{ query }}&page={{ page.next_page_number }}">Next →</a>{% endif %}</nav>{% endif %}
+</section>
+{% endblock %}

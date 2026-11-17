@@ -1,208 +1,176 @@
+const container = document.getElementById("seat-sections");
+const action = document.getElementById("continue-btn");
+const timer = document.getElementById("timer");
+const message = document.createElement("p");
+message.setAttribute("role", "status");
+container.before(message);
+const selected = new Set();
+let bookingId = null;
+let expiresAt = 0;
+let busy = false;
+let dirty = false;
+let seats = [];
+const csrf = document.querySelector('[name="csrfmiddlewaretoken"]').value;
 
-const seatContainer = document.getElementById("seat-sections");
-const selectedCount = document.getElementById("selected-count");
-const totalPrice = document.getElementById("total-price");
-const continueButton = document.getElementById("continue-btn");
-const timerElement = document.getElementById("timer");
-
-const selectedSeats = new Set();
-let availableSeats = [];
-let currentBookingId = null;
-let countdownInterval = null;
-
-function getCSRFToken() {
-    return document.querySelector(
-        '#csrf-form input[name="csrfmiddlewaretoken"]'
-    )?.value || "";
+async function api(url, body) {
+    const options = {cache: "no-store"};
+    if (body !== undefined) {
+        Object.assign(options, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", "X-CSRFToken": csrf},
+            body: JSON.stringify(body),
+        });
+    }
+    const response = await fetch(url, options);
+    if (response.redirected) throw new Error("Please sign in again.");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Request failed. Please try again.");
+    return data;
 }
 
-function updateSummary() {
-    selectedCount.textContent = `${selectedSeats.size} Seats`;
-    totalPrice.textContent = (
-        selectedSeats.size * TICKET_PRICE
-    ).toFixed(2);
-    continueButton.disabled = selectedSeats.size === 0;
-}
-
-function renderSeats() {
-    seatContainer.innerHTML = "";
-
+function render() {
+    container.replaceChildren();
     const row = document.createElement("div");
     row.className = "seat-row";
-
-    availableSeats.forEach(seat => {
+    row.style.flexWrap = "wrap";
+    seats.forEach(seat => {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = "seat";
+        const chosen = selected.has(seat.id);
+        button.className = "seat " + (chosen ? "selected" : seat.status.toLowerCase());
         button.textContent = seat.seat_number;
-
-        if (seat.status !== "AVAILABLE") {
-            button.classList.add(seat.status.toLowerCase());
-            button.disabled = true;
-            selectedSeats.delete(seat.id);
-        } else if (selectedSeats.has(seat.id)) {
-            button.classList.add("selected");
-        }
-
-        button.addEventListener("click", () => {
-            if (selectedSeats.has(seat.id)) {
-                selectedSeats.delete(seat.id);
-            } else {
-                selectedSeats.add(seat.id);
-            }
-            renderSeats();
-        });
-
-        row.appendChild(button);
+        button.disabled = busy || (seat.status !== "AVAILABLE" && !seat.owned);
+        button.setAttribute("aria-pressed", String(chosen));
+        button.setAttribute("aria-label", "Seat " + seat.seat_number + ", " + (seat.owned ? "reserved by you" : seat.status));
+        button.onclick = () => {
+            if (chosen) selected.delete(seat.id);
+            else selected.add(seat.id);
+            dirty = true;
+            render();
+        };
+        row.append(button);
     });
-
-    seatContainer.appendChild(row);
-    updateSummary();
+    container.append(row);
+    document.getElementById("selected-count").textContent = selected.size + " Seats";
+    document.getElementById("total-price").textContent = (selected.size * TICKET_PRICE).toFixed(2);
+    action.textContent = bookingId ? (dirty ? "Update reservation" : "Pay Now") : "Reserve seats";
+    action.disabled = busy || (!selected.size && !bookingId);
 }
 
-async function loadSeats() {
+async function refresh() {
+    if (busy) return;
     try {
-        const response = await fetch(
-            `/bookings/show/${SHOW_ID}/seats/`
-        );
-        if (!response.ok) throw new Error("Unable to load seats");
-
-        const data = await response.json();
-        availableSeats = data.seats;
-        renderSeats();
+        const data = await api('/bookings/show/' + SHOW_ID + '/seats/');
+        if (busy) return;
+        seats = data.seats;
+        const owned = seats.filter(seat => seat.owned);
+        const hold = owned.find(seat => seat.booking_id === bookingId) || owned[0];
+        if (hold) {
+            bookingId = hold.booking_id;
+            expiresAt = Date.now() + (new Date(hold.reserved_until).getTime() - new Date(data.server_time).getTime());
+            if (!dirty) {
+                selected.clear();
+                owned.filter(seat => seat.booking_id === bookingId).forEach(seat => selected.add(seat.id));
+            }
+        } else if (bookingId) {
+            bookingId = null;
+            expiresAt = 0;
+            dirty = false;
+            selected.clear();
+            message.textContent = "Reservation expired. Select seats again.";
+        }
+        for (const id of selected) {
+            if (!seats.some(seat => seat.id === id && (seat.status === "AVAILABLE" || seat.owned))) {
+                selected.delete(id);
+            }
+        }
+        render();
     } catch (error) {
-        console.error(error);
-        seatContainer.textContent = "Unable to load seats.";
+        message.textContent = error.message;
     }
 }
 
-function startTimer() {
-    clearInterval(countdownInterval);
-    let remaining = 120;
-
-    countdownInterval = setInterval(() => {
-        remaining--;
-        const minutes = Math.floor(remaining / 60);
-        const seconds = remaining % 60;
-
-        timerElement.textContent =
-            `${String(minutes).padStart(2, "0")}:` +
-            `${String(seconds).padStart(2, "0")}`;
-
-        if (remaining <= 0) {
-            clearInterval(countdownInterval);
-            alert("Reservation time expired. Please select seats again.");
-            window.location.reload();
-        }
-    }, 1000);
-}
-
-async function verifyPayment(paymentResponse) {
-    const response = await fetch("/payments/verify/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCSRFToken()
-        },
-        body: JSON.stringify({
-            booking_id: currentBookingId,
-            razorpay_payment_id: paymentResponse.razorpay_payment_id,
-            razorpay_order_id: paymentResponse.razorpay_order_id,
-            razorpay_signature: paymentResponse.razorpay_signature
-        })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error || "Payment verification failed");
-    }
-
-    window.location.href =
-        `/payments/confirmation/${data.booking_id || currentBookingId}/`;
-}
-
-async function startPayment() {
-    const response = await fetch(
-        `/payments/create/${currentBookingId}/`,
-        {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": getCSRFToken()
+async function pay() {
+    const id = bookingId;
+    const order = await api('/payments/create/' + id + '/', {});
+    if (typeof Razorpay === "undefined") throw new Error("Payment checkout could not load.");
+    let completed = false;
+    async function finishCheckout(url, body, notice) {
+        try {
+            const result = await api(url, body);
+            if (result.status === "SUCCESS" || result.status === "CONFIRMED") {
+                completed = true;
+                window.location.href = '/payments/confirmation/' + id + '/';
+                return;
             }
+            message.textContent = notice;
+        } catch (error) {
+            message.textContent = error.message;
+        } finally {
+            busy = false;
+            await refresh();
         }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error || "Could not create payment");
     }
-
-    if (typeof Razorpay === "undefined") {
-        throw new Error("Razorpay checkout script is missing");
-    }
-
     const checkout = new Razorpay({
-        key: data.key_id || data.key,
-        amount: data.amount,
-        currency: data.currency || "INR",
-        name: "Book My Show",
-        description: "Movie Ticket Booking",
-        order_id: data.order_id || data.razorpay_order_id,
-        handler: async function (paymentResponse) {
+        key: order.key_id, amount: order.amount, currency: order.currency,
+        order_id: order.order_id, name: "Book My Show",
+        retry: {enabled: false},
+        handler: async response => {
+            completed = true;
             try {
-                await verifyPayment(paymentResponse);
+                await api('/payments/verify/', {...response, booking_id: id});
+                window.location.href = '/payments/confirmation/' + id + '/';
             } catch (error) {
-                alert(error.message);
+                message.textContent = error.message;
+                busy = false;
+                await refresh();
             }
         },
-        theme: {
-            color: "#f84464"
-        }
+        modal: {ondismiss: async () => {
+            if (!completed) {
+                await finishCheckout('/payments/cancel/' + id + '/', {}, "Payment cancelled. Select seats to retry.");
+            }
+        }},
     });
-
+    checkout.on("payment.failed", async response => {
+        completed = true;
+        const paymentId = response.error.metadata?.payment_id;
+        if (paymentId) {
+            await finishCheckout('/payments/failed/' + id + '/', {payment_id: paymentId}, "Payment failed. Select seats to retry.");
+        } else {
+            await finishCheckout('/payments/cancel/' + id + '/', {}, "Checkout failed. Select seats to retry.");
+        }
+        checkout.close();
+    });
     checkout.open();
 }
 
-continueButton.addEventListener("click", async () => {
-    if (selectedSeats.size === 0) return;
-
-    continueButton.disabled = true;
-
+action.onclick = async () => {
+    if (busy) return;
+    busy = true;
+    render();
     try {
-        const response = await fetch(
-            `/bookings/show/${SHOW_ID}/reserve/`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCSRFToken()
-                },
-                body: JSON.stringify({
-                    seat_ids: [...selectedSeats]
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || "Seat reservation failed");
+        if (bookingId && !dirty) {
+            await pay();
+            return;
         }
-
-        currentBookingId = data.booking_id;
-        startTimer();
-        await startPayment();
+        const data = await api('/bookings/show/' + SHOW_ID + '/reserve/', {
+            seat_ids: [...selected], booking_id: bookingId,
+        });
+        bookingId = data.booking_id;
+        expiresAt = data.reserved_until ? Date.now() + (new Date(data.reserved_until).getTime() - new Date(data.server_time).getTime()) : 0;
+        dirty = false;
+        message.textContent = bookingId ? "Seats reserved. You can change seats before paying. Changes keep the original expiry." : "Reservation released.";
     } catch (error) {
-        alert(error.message);
-        await loadSeats();
-    } finally {
-        if (!currentBookingId) {
-            updateSummary();
-        }
+        message.textContent = error.message;
     }
-});
-
-loadSeats();
-setInterval(loadSeats, 5000);
+    busy = false;
+    await refresh();
+};
+setInterval(() => {
+    if (!expiresAt) { timer.textContent = "No active reservation"; return; }
+    const seconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+    timer.textContent = Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+}, 250);
+refresh();
+setInterval(refresh, 2000);

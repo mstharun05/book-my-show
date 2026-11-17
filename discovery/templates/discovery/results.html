@@ -1,0 +1,17 @@
+<div role="status" aria-live="polite" class="section-heading"><h2>{{ matching_count }} matching movie{{ matching_count|pluralize }}</h2></div>
+{% if form.errors %}<div role="alert">{{ form.errors }}</div>{% endif %}
+<div class="movie-grid">
+{% for movie in page_obj %}
+{% include "discovery/movie_card.html" %}
+{% empty %}<p>No matching movies. Try changing the filters.</p>{% endfor %}
+</div>
+<nav class="pagination" aria-label="Movie result pages">
+{% if page_obj.has_previous %}<a href="?{{ query }}&page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+{% if page_obj.has_next %}<a href="?{{ query }}&page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</nav>
+{% if recommended %}
+<h2>Recommended for You</h2>
+<p>{% if personalized %}Based on your confirmed bookings and recently viewed movies.{% else %}Popular and highly rated movies to get you started.{% endif %} Recommendations follow your filters.</p>
+<div class="movie-grid">{% for movie in recommended %}{% include "discovery/movie_card.html" %}{% endfor %}</div>
+{% endif %}

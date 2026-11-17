@@ -5,3 +5,8 @@ db.sqlite3
 .env
 staticfiles/
 media/
+razorpay.local.json
+ADMIN_DASHBOARD_REPORT.md
+tmp/
+celerybeat-schedule*
+delivery.local.json

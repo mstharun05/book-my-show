@@ -1,0 +1,14 @@
+<article class="movie-card">
+<div class="poster-wrap">
+{% if movie.poster %}<img src="{{ movie.poster }}" alt="{{ movie.title }} poster" loading="lazy">{% else %}<div class="poster-placeholder">Poster unavailable</div>{% endif %}
+<span class="certificate">{{ movie.age_certificate }}</span>
+</div>
+<div class="movie-info">
+<div class="rating">{% if movie.calculated_rating %}★ {{ movie.calculated_rating|floatformat:1 }}/5{% else %}No ratings yet{% endif %}</div>
+<h3><a href="{% url 'discovery:movie_detail' movie.pk %}">{{ movie.title }}</a></h3>
+<p>{{ movie.duration }} min · {{ movie.genre.all|join:", " }}</p>
+<p>{{ movie.languages.all|join:", " }} · {{ movie.release_date }}</p>
+{% if movie.minimum_price != None %}<p>Tickets from ₹{{ movie.minimum_price }}</p>{% endif %}
+{% if movie.next_show_id %}<a class="book-ticket-btn" href="{% url 'bookings:seat_selection' movie.next_show_id %}">Book Tickets</a>
+{% else %}<p>No upcoming shows</p>{% endif %}
+</div></article>

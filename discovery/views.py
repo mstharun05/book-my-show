@@ -1,101 +1,95 @@
-
-from django.shortcuts import render, get_object_or_404
-from django.db.models import Q, Avg, Count, Prefetch
 from django.core.paginator import Paginator
+from django.db.models import Avg, Count, Exists, F, OuterRef, Q, Subquery, IntegerField, FloatField
+from django.db.models.functions import Coalesce
+from django.shortcuts import render
 from django.utils import timezone
 
-from movies.models import Movie, Genre, Language
-from bookings.models import Show
+from movies.models import Movie, Review
+from bookings.models import Booking, Show, Theater
+from .forms import DiscoveryForm
+
+
+def filtered_movies(data):
+    shows = Show.objects.filter(show_time__gte=timezone.now())
+    if data.get("city"):
+        shows = shows.filter(screen__theater__city__iexact=data["city"])
+    if data.get("theater"):
+        shows = shows.filter(screen__theater=data["theater"])
+    if data.get("show_from"):
+        shows = shows.filter(show_time__gte=data["show_from"])
+    if data.get("show_to"):
+        shows = shows.filter(show_time__lte=data["show_to"])
+    matching_shows = shows.filter(movie_id=OuterRef("pk"))
+    ratings = Review.objects.filter(movie_id=OuterRef("pk")).order_by().values(
+        "movie_id"
+    ).annotate(value=Avg("rating")).values("value")
+    popularity = Booking.objects.filter(show__movie_id=OuterRef("pk"), status="CONFIRMED").order_by().values(
+        "show__movie_id"
+    ).annotate(value=Count("id")).values("value")
+    movies = Movie.objects.annotate(
+        calculated_rating=Coalesce(Subquery(ratings, output_field=FloatField()),0.0),
+        booking_count=Coalesce(Subquery(popularity, output_field=IntegerField()),0),
+        minimum_price=Subquery(matching_shows.order_by("ticket_price","pk").values("ticket_price")[:1]),
+        next_show_id=Subquery(matching_shows.order_by("show_time","pk").values("pk")[:1]),
+    )
+    if data.get("search"):
+        movies = movies.filter(title__icontains=data["search"])
+    if data.get("genre"):
+        movies = movies.filter(genre=data["genre"])
+    if data.get("language"):
+        movies = movies.filter(languages=data["language"])
+    if data.get("release_from"):
+        movies = movies.filter(release_date__gte=data["release_from"])
+    if data.get("release_to"):
+        movies = movies.filter(release_date__lte=data["release_to"])
+    if data.get("min_rating") is not None:
+        movies = movies.filter(calculated_rating__gte=data["min_rating"])
+    if any(data.get(key) for key in ("city","theater","show_from","show_to")):
+        movies = movies.filter(Exists(matching_shows))
+    ordering = {
+        "newest": ["-release_date","-pk"],
+        "popular": ["-booking_count","-release_date","pk"],
+        "rating": ["-calculated_rating","-release_date","pk"],
+        "price": [F("minimum_price").asc(nulls_last=True),"pk"],
+        "price_desc": [F("minimum_price").desc(nulls_last=True),"pk"],
+    }
+    return movies.order_by(*ordering.get(data.get("sort"),ordering["newest"])).prefetch_related("genre","languages")
+
+
+def recommended_movies(request, movies):
+    recent = [pk for pk in request.session.get("recent_movies", []) if isinstance(pk, int)][:20]
+    booked = []
+    if request.user.is_authenticated:
+        booked = list(Booking.objects.filter(user=request.user, status="CONFIRMED").order_by(
+            "-created_at","-pk"
+        ).values_list("show__movie_id",flat=True)[:30])
+    seeds = list(dict.fromkeys(recent + booked))
+    if not seeds:
+        return movies.order_by("-booking_count","-calculated_rating","-release_date","pk")[:6], False
+    seed_genres = Movie.genre.through.objects.filter(movie_id__in=seeds).values("genre_id")
+    seed_languages = Movie.languages.through.objects.filter(movie_id__in=seeds).values("language_id")
+    recommendations = movies.exclude(pk__in=seeds).annotate(
+        genre_matches=Count("genre",filter=Q(genre__in=seed_genres),distinct=True),
+        language_matches=Count("languages",filter=Q(languages__in=seed_languages),distinct=True),
+    ).annotate(affinity=F("genre_matches")*2+F("language_matches")).filter(affinity__gt=0)
+    return recommendations.order_by("-affinity","-calculated_rating","-booking_count","pk")[:6], True
 
 
 def movie_list(request):
-
-    search = request.GET.get("search", "").strip()
-    selected_genre = request.GET.get("genre", "").strip()
-    selected_language = request.GET.get("language", "").strip()
-    selected_sort = request.GET.get("sort", "newest").strip()
-
-    movies = Movie.objects.all()
-
-    # Search movies
-    if search:
-        movies = movies.filter(
-            Q(title__icontains=search) |
-            Q(description__icontains=search)
-        )
-
-    # Filter by genre ID
-    if selected_genre:
-        movies = movies.filter(genre__id=selected_genre)
-
-    # Filter by language ID
-    if selected_language:
-        movies = movies.filter(languages__id=selected_language)
-
-    # Avoid conflict with Movie.average_rating property
-    movies = movies.annotate(
-        calculated_rating=Avg("reviews__rating"),
-        booking_count=Count(
-            "show__booking",
-            filter=Q(show__booking__status="CONFIRMED"),
-            distinct=True
-        )
-    ).distinct()
-
-    # Sorting
-    if selected_sort == "rating":
-        movies = movies.order_by(
-            "-calculated_rating",
-            "-release_date"
-        )
-
-    elif selected_sort == "popular":
-        movies = movies.order_by(
-            "-booking_count",
-            "-release_date"
-        )
-
-    else:
-        selected_sort = "newest"
-        movies = movies.order_by(
-            "-release_date",
-            "-created_at"
-        )
-
-    # Load movie genres, languages and upcoming shows
-    movies = movies.prefetch_related(
-        "genre",
-        "languages",
-        Prefetch(
-            "show_set",
-            queryset=Show.objects.filter(
-                show_time__gte=timezone.now()
-            ).order_by("show_time"),
-            to_attr="upcoming_shows"
-        )
-    )
-
-    # Pagination
-    matching_count = movies.count()
+    form = DiscoveryForm(request.GET)
+    valid = form.is_valid()
+    movies = filtered_movies(form.cleaned_data) if valid else Movie.objects.none()
     paginator = Paginator(movies, 8)
-    page_obj = paginator.get_page(
-        request.GET.get("page")
-    )
-
+    page = paginator.get_page(request.GET.get("page"))
+    recommended, personalized = recommended_movies(request, movies) if valid else ([], False)
+    query = request.GET.copy()
+    query.pop("page", None)
+    query.pop("partial", None)
     context = {
-        "page_obj": page_obj,
-        "movies": page_obj,
-        "matching_count": matching_count,
-        "genres": Genre.objects.all().order_by("name"),
-        "languages": Language.objects.all().order_by("name"),
-        "search": search,
-        "selected_genre": selected_genre,
-        "selected_language": selected_language,
-        "selected_sort": selected_sort,
+        "form":form, "page_obj":page, "matching_count":paginator.count,
+        "recommended":recommended, "personalized":personalized, "query":query.urlencode(),
+        "search":request.GET.get("search",""),
+        "cities": Theater.objects.order_by("city").values_list("city",flat=True).distinct(),
     }
-
-    return render(
-        request,
-        "discovery/movie_list.html",
-        context
-    )
+    template = "discovery/results.html" if request.GET.get("partial") == "1" else "discovery/movie_list.html"
+    return render(request,template,context)

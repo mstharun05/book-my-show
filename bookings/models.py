@@ -45,6 +45,12 @@ class Show(models.Model):
     show_time = models.DateTimeField()
     ticket_price = models.DecimalField(max_digits=8, decimal_places=2)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["show_time", "screen"], name="show_time_screen_idx"),
+            models.Index(fields=["movie", "show_time", "ticket_price"], name="show_movie_time_price_idx"),
+        ]
+
     def __str__(self):
         return f"{self.movie.title} - {self.show_time}"
 
@@ -62,6 +68,15 @@ class Booking(models.Model):
         max_length=20, choices=STATUS_CHOICES, default='PENDING'
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    seat_numbers = models.JSONField(default=list, blank=True)
+    attended_at = models.DateTimeField(null=True, blank=True, editable=False, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["created_at", "status"], name="booking_date_status_idx"),
+            models.Index(fields=["status", "created_at"], name="booking_status_date_idx"),
+            models.Index(fields=["user", "status", "show"], name="booking_user_status_show_idx"),
+        ]
 
     def __str__(self):
         return f"Booking #{self.id}"

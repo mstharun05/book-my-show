@@ -68,6 +68,8 @@
         </div>
 
         <a href="/movies/" class="home">Back to Movies</a>
+        <a href="{% url 'download_ticket' booking.id %}" class="home">Download PDF ticket</a>
+        <p>Your ticket email is queued for background delivery. <a href="{% url 'account_email' %}">Check your email address</a>.</p>
     </div>
 </body>
 </html>

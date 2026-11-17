@@ -1,0 +1,679 @@
+[
+{
+  "model": "movies.genre",
+  "pk": 1,
+  "fields": {
+    "name": "Science Fiction, Thriller"
+  }
+},
+{
+  "model": "movies.genre",
+  "pk": 2,
+  "fields": {
+    "name": "Science Fiction"
+  }
+},
+{
+  "model": "movies.genre",
+  "pk": 3,
+  "fields": {
+    "name": "Thriller"
+  }
+},
+{
+  "model": "movies.genre",
+  "pk": 4,
+  "fields": {
+    "name": "Action"
+  }
+},
+{
+  "model": "movies.genre",
+  "pk": 5,
+  "fields": {
+    "name": "Adventure"
+  }
+},
+{
+  "model": "movies.genre",
+  "pk": 6,
+  "fields": {
+    "name": "Drama"
+  }
+},
+{
+  "model": "movies.genre",
+  "pk": 7,
+  "fields": {
+    "name": "Crime"
+  }
+},
+{
+  "model": "movies.language",
+  "pk": 1,
+  "fields": {
+    "name": "English"
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 1,
+  "fields": {
+    "name": "Alex Morgan",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 2,
+  "fields": {
+    "name": "Emma Wilson",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 3,
+  "fields": {
+    "name": "Daniel Carter",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 4,
+  "fields": {
+    "name": "Leonardo DiCaprio",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 5,
+  "fields": {
+    "name": "Joseph Gordon-Levitt",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 6,
+  "fields": {
+    "name": "Elliot Page",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 7,
+  "fields": {
+    "name": "Matthew McConaughey",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 8,
+  "fields": {
+    "name": "Anne Hathaway",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 9,
+  "fields": {
+    "name": "Jessica Chastain",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 10,
+  "fields": {
+    "name": "Christian Bale",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 11,
+  "fields": {
+    "name": "Heath Ledger",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.castmember",
+  "pk": 12,
+  "fields": {
+    "name": "Aaron Eckhart",
+    "biography": "",
+    "photo": ""
+  }
+},
+{
+  "model": "movies.movie",
+  "pk": 1,
+  "fields": {
+    "title": "The Last Signal",
+    "description": "When Earth receives a mysterious signal from a distant planet, a young astronaut is sent on a dangerous mission to uncover its origin. But what she discovers could change humanity forever.",
+    "trailer_url": "",
+    "poster": "",
+    "age_certificate": "UA",
+    "duration": 128,
+    "release_date": "2026-11-15",
+    "created_at": "2026-11-01T11:54:37.820Z",
+    "genre": [
+      1
+    ],
+    "languages": [
+      1
+    ],
+    "cast": [
+      1,
+      2,
+      3
+    ]
+  }
+},
+{
+  "model": "movies.movie",
+  "pk": 2,
+  "fields": {
+    "title": "Inception",
+    "description": "A skilled dream thief assembles a team to plant an idea in a business heir's mind. As they descend through layers of dreams, his troubled memories threaten their mission and his chance to return home.",
+    "trailer_url": "https://www.youtube.com/watch?v=YoHD9XEInc0",
+    "poster": "https://i.ytimg.com/vi/YoHD9XEInc0/hqdefault.jpg",
+    "age_certificate": "UA",
+    "duration": 148,
+    "release_date": "2010-07-16",
+    "created_at": "2026-11-16T10:35:01.754Z",
+    "genre": [
+      2,
+      3,
+      4
+    ],
+    "languages": [
+      1
+    ],
+    "cast": [
+      4,
+      5,
+      6
+    ]
+  }
+},
+{
+  "model": "movies.movie",
+  "pk": 3,
+  "fields": {
+    "title": "Interstellar",
+    "description": "A former pilot leaves a struggling Earth to search for a new home for humanity. His expedition through a wormhole tests the limits of exploration, while his daughter works to solve the crisis back home.",
+    "trailer_url": "https://www.youtube.com/watch?v=nyc6RJEEe0U",
+    "poster": "https://i.ytimg.com/vi/nyc6RJEEe0U/hqdefault.jpg",
+    "age_certificate": "UA",
+    "duration": 169,
+    "release_date": "2014-11-07",
+    "created_at": "2026-11-16T10:35:01.805Z",
+    "genre": [
+      2,
+      5,
+      6
+    ],
+    "languages": [
+      1
+    ],
+    "cast": [
+      7,
+      8,
+      9
+    ]
+  }
+},
+{
+  "model": "movies.movie",
+  "pk": 4,
+  "fields": {
+    "title": "The Dark Knight",
+    "description": "Batman joins forces with Lieutenant Gordon and Harvey Dent to tackle Gotham's organized crime. The arrival of the Joker puts their alliance under pressure and forces difficult choices about justice and sacrifice.",
+    "trailer_url": "https://www.youtube.com/watch?v=kmJLuwP3MbY",
+    "poster": "https://i.ytimg.com/vi/kmJLuwP3MbY/hqdefault.jpg",
+    "age_certificate": "UA",
+    "duration": 152,
+    "release_date": "2008-07-18",
+    "created_at": "2026-11-16T10:35:01.813Z",
+    "genre": [
+      4,
+      6,
+      7
+    ],
+    "languages": [
+      1
+    ],
+    "cast": [
+      10,
+      11,
+      12
+    ]
+  }
+},
+{
+  "model": "bookings.theater",
+  "pk": 1,
+  "fields": {
+    "name": "PVR CINEMAS",
+    "city": "VELLORE",
+    "address": "NEAR VELLORE KITCHEN"
+  }
+},
+{
+  "model": "bookings.screen",
+  "pk": 1,
+  "fields": {
+    "theater": 1,
+    "name": "SCREEN1"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 2,
+  "fields": {
+    "screen": 1,
+    "seat_number": "10"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 43,
+  "fields": {
+    "screen": 1,
+    "seat_number": "1"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 44,
+  "fields": {
+    "screen": 1,
+    "seat_number": "2"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 45,
+  "fields": {
+    "screen": 1,
+    "seat_number": "3"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 46,
+  "fields": {
+    "screen": 1,
+    "seat_number": "4"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 47,
+  "fields": {
+    "screen": 1,
+    "seat_number": "5"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 48,
+  "fields": {
+    "screen": 1,
+    "seat_number": "6"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 49,
+  "fields": {
+    "screen": 1,
+    "seat_number": "7"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 50,
+  "fields": {
+    "screen": 1,
+    "seat_number": "8"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 51,
+  "fields": {
+    "screen": 1,
+    "seat_number": "9"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 52,
+  "fields": {
+    "screen": 1,
+    "seat_number": "11"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 53,
+  "fields": {
+    "screen": 1,
+    "seat_number": "12"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 54,
+  "fields": {
+    "screen": 1,
+    "seat_number": "13"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 55,
+  "fields": {
+    "screen": 1,
+    "seat_number": "14"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 56,
+  "fields": {
+    "screen": 1,
+    "seat_number": "15"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 57,
+  "fields": {
+    "screen": 1,
+    "seat_number": "16"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 58,
+  "fields": {
+    "screen": 1,
+    "seat_number": "17"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 59,
+  "fields": {
+    "screen": 1,
+    "seat_number": "18"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 60,
+  "fields": {
+    "screen": 1,
+    "seat_number": "19"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 61,
+  "fields": {
+    "screen": 1,
+    "seat_number": "20"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 62,
+  "fields": {
+    "screen": 1,
+    "seat_number": "21"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 63,
+  "fields": {
+    "screen": 1,
+    "seat_number": "22"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 64,
+  "fields": {
+    "screen": 1,
+    "seat_number": "23"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 65,
+  "fields": {
+    "screen": 1,
+    "seat_number": "24"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 66,
+  "fields": {
+    "screen": 1,
+    "seat_number": "25"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 67,
+  "fields": {
+    "screen": 1,
+    "seat_number": "26"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 68,
+  "fields": {
+    "screen": 1,
+    "seat_number": "27"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 69,
+  "fields": {
+    "screen": 1,
+    "seat_number": "28"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 70,
+  "fields": {
+    "screen": 1,
+    "seat_number": "29"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 71,
+  "fields": {
+    "screen": 1,
+    "seat_number": "30"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 72,
+  "fields": {
+    "screen": 1,
+    "seat_number": "31"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 73,
+  "fields": {
+    "screen": 1,
+    "seat_number": "32"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 74,
+  "fields": {
+    "screen": 1,
+    "seat_number": "33"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 75,
+  "fields": {
+    "screen": 1,
+    "seat_number": "34"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 76,
+  "fields": {
+    "screen": 1,
+    "seat_number": "35"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 77,
+  "fields": {
+    "screen": 1,
+    "seat_number": "36"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 78,
+  "fields": {
+    "screen": 1,
+    "seat_number": "37"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 79,
+  "fields": {
+    "screen": 1,
+    "seat_number": "38"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 80,
+  "fields": {
+    "screen": 1,
+    "seat_number": "39"
+  }
+},
+{
+  "model": "bookings.seat",
+  "pk": 81,
+  "fields": {
+    "screen": 1,
+    "seat_number": "40"
+  }
+},
+{
+  "model": "bookings.show",
+  "pk": 1,
+  "fields": {
+    "movie": 1,
+    "screen": 1,
+    "show_time": "2026-11-16T18:00:00Z",
+    "ticket_price": "250.00"
+  }
+},
+{
+  "model": "bookings.show",
+  "pk": 8,
+  "fields": {
+    "movie": 2,
+    "screen": 1,
+    "show_time": "2026-11-17T04:30:00Z",
+    "ticket_price": "200.00"
+  }
+},
+{
+  "model": "bookings.show",
+  "pk": 9,
+  "fields": {
+    "movie": 3,
+    "screen": 1,
+    "show_time": "2026-11-17T08:30:00Z",
+    "ticket_price": "250.00"
+  }
+},
+{
+  "model": "bookings.show",
+  "pk": 10,
+  "fields": {
+    "movie": 4,
+    "screen": 1,
+    "show_time": "2026-11-17T12:30:00Z",
+    "ticket_price": "220.00"
+  }
+},
+{
+  "model": "bookings.show",
+  "pk": 11,
+  "fields": {
+    "movie": 2,
+    "screen": 1,
+    "show_time": "2026-11-18T04:30:00Z",
+    "ticket_price": "200.00"
+  }
+},
+{
+  "model": "bookings.show",
+  "pk": 12,
+  "fields": {
+    "movie": 3,
+    "screen": 1,
+    "show_time": "2026-11-18T08:30:00Z",
+    "ticket_price": "250.00"
+  }
+},
+{
+  "model": "bookings.show",
+  "pk": 13,
+  "fields": {
+    "movie": 4,
+    "screen": 1,
+    "show_time": "2026-11-18T12:30:00Z",
+    "ticket_price": "220.00"
+  }
+}
+]

@@ -1,0 +1,14 @@
+{% extends "discovery/base.html" %}
+{% block title %}Sign in | Book My Show{% endblock %}
+{% block content %}
+<section style="max-width: 34rem; margin: 3rem auto; padding: 1rem">
+    <h1>Sign in</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit">Sign in</button>
+    </form>
+    <p><a href="{% url 'signup' %}">Create an account</a></p>
+</section>
+{% endblock %}

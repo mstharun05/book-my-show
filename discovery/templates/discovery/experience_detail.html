@@ -1,0 +1,12 @@
+{% extends 'discovery/base.html' %}
+{% block title %}{{ item.title }} | Book My Show{% endblock %}
+{% block content %}
+<section class="catalog-shell">
+<a href="{% url 'entertainment_category' item.category %}">← All {{ item.get_category_display }}</a>
+<div class="experience-detail">
+{% if item.poster %}<img src="{{ item.poster }}" alt="{{ item.title }}">{% endif %}
+<div><p class="catalog-eyebrow">{{ item.get_category_display|upper }}</p><h1>{{ item.title }}</h1><p>{{ item.starts_at|date:'l, d F Y · g:i A' }} · {{ item.duration_minutes }} min</p><h2>{{ item.venue }}</h2><p>{{ item.city }}</p><p>{{ item.address|linebreaksbr }}</p><p>{% if item.price %}From ₹{{ item.price }}{% else %}Free entry{% endif %}</p>
+{% if upcoming and item.booking_url %}<a class="signin" href="{{ item.booking_url }}" target="_blank" rel="noopener noreferrer">Book with organizer ↗</a><p class="catalog-count">Booking and payment are handled on the organizer's website.</p>{% elif not upcoming %}<p>This experience has ended.</p>{% else %}<p>Bookings are not open yet.</p>{% endif %}</div></div>
+<h2>About this experience</h2><div class="experience-description">{{ item.description|linebreaks }}</div>
+</section>
+{% endblock %}

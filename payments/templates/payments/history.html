@@ -1,0 +1,46 @@
+{% extends "discovery/base.html" %}
+{% block title %}My profile | Book My Show{% endblock %}
+{% block content %}
+<section style="max-width:1000px;margin:2rem auto;padding:1rem">
+<h1>{{ user.username }}'s profile</h1>
+<p>Ticket email: {{ user.email|default:"Not set" }} · <a href="{% url 'account_email' %}">Update email address</a></p>
+<h2>Bookings and payments</h2>
+{% for booking in page %}
+<article style="background:white;border:1px solid #ddd;border-radius:10px;padding:1.5rem;margin-bottom:1rem;overflow-wrap:anywhere">
+    <h3>{{ booking.show.movie.title }} · Booking #{{ booking.id }}</h3>
+    <p>{{ booking.show.screen.theater.name }} · {{ booking.show.screen.name }} · {{ booking.show.show_time }}</p>
+    <p>{{ booking.get_status_display }} · {{ booking.created_at }}</p>
+    <p>Seats {{ booking.seat_numbers|join:", "|default:"Unavailable for older bookings" }}</p>
+    {% if booking.status == "CONFIRMED" %}
+        <a href="{% url 'payments:booking_confirmation' booking.id %}">View confirmation</a>
+        · <a href="{% url 'download_ticket' booking.id %}">Download PDF ticket</a>
+    {% else %}
+        <a href="{% url 'bookings:seat_selection' booking.show_id %}">Select seats / retry payment</a>
+    {% endif %}
+    {% for payment in booking.payments.all %}
+        <h4>₹{{ payment.amount }} · {{ payment.get_status_display }}</h4>
+        <p>Order {{ payment.razorpay_order_id|default:"Creation failed" }}</p>
+        {% if payment.status == "REFUND_REQUIRED" %}
+        <p>Payment was received after seats became unavailable. Contact support for a refund using this order ID.</p>
+        {% endif %}
+        {% for attempt in payment.attempts.all %}
+        <p>Transaction {{ attempt.transaction_id }} · {{ attempt.status }} · ₹{{ attempt.amount }}</p>
+        {% if attempt.status == "REFUND_REQUIRED" %}<p>This extra payment requires refund review.</p>{% endif %}
+        {% if attempt.error %}<p>{{ attempt.error }}</p>{% endif %}
+        {% empty %}
+        <p>{{ payment.razorpay_payment_id|default:"No transaction completed yet" }}</p>
+        {% endfor %}
+    {% empty %}
+        <p>No payment order created.</p>
+    {% endfor %}
+</article>
+{% empty %}
+<p>Your bookings and payments will appear here.</p>
+{% endfor %}
+<nav aria-label="History pages">
+{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}
+<span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+{% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next</a>{% endif %}
+</nav>
+</section>
+{% endblock %}

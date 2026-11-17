@@ -1,7 +1,9 @@
-
 from datetime import timedelta
+from functools import wraps
+from time import sleep
 
-from django.db import transaction
+from django.db import OperationalError, transaction
+from django.db.models import F
 from django.utils import timezone
 
 from .models import Show, Seat, Booking, ShowSeat
@@ -11,144 +13,96 @@ class SeatUnavailableError(Exception):
     pass
 
 
+
+def retry_contention(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        for attempt in range(6):
+            try:
+                return function(*args, **kwargs)
+            except OperationalError as error:
+                if "locked" not in str(error).lower() or attempt == 5:
+                    raise
+                sleep(0.05 * (attempt + 1))
+    return wrapped
+
+
+def lock_show(show_id):
+    # A write lock also serializes SQLite, where select_for_update is a no-op.
+    if not Show.objects.filter(pk=show_id).update(ticket_price=F("ticket_price")):
+        raise Show.DoesNotExist
+    return Show.objects.get(pk=show_id)
+
+
 @transaction.atomic
 def release_expired_seats(show_id=None):
-    """
-    Release reservations whose two-minute expiry has passed.
-    """
-
-    now = timezone.now()
-
+    if show_id is None:
+        for pk in Show.objects.order_by("pk").values_list("pk", flat=True):
+            release_expired_seats(pk)
+        return
+    lock_show(show_id)
     expired = ShowSeat.objects.filter(
-        status="RESERVED",
-        reserved_until__lte=now
+        show_id=show_id, status="RESERVED", reserved_until__lte=timezone.now()
     )
-
-    if show_id is not None:
-        expired = expired.filter(show_id=show_id)
-
-    booking_ids = list(
-        expired.exclude(booking=None)
-        .values_list("booking_id", flat=True)
-        .distinct()
-    )
-
-    expired.update(
-        status="AVAILABLE",
-        reserved_until=None,
-        booking=None
-    )
-
-    # Cancel pending bookings that no longer have reserved seats.
-    for booking_id in booking_ids:
-        still_reserved = ShowSeat.objects.filter(
-            booking_id=booking_id,
-            status="RESERVED",
-            reserved_until__gt=now
-        ).exists()
-
-        if not still_reserved:
-            Booking.objects.filter(
-                id=booking_id,
-                status="PENDING"
-            ).update(status="CANCELLED")
+    booking_ids = list(expired.values_list("booking_id", flat=True))
+    expired.update(status="AVAILABLE", reserved_until=None, booking=None)
+    Booking.objects.filter(pk__in=booking_ids, status="PENDING").exclude(
+        showseat__status="RESERVED"
+    ).update(status="CANCELLED")
 
 
+@retry_contention
 @transaction.atomic
-def reserve_seats(user, show_id, seat_ids):
-
-    if not isinstance(seat_ids, (list, tuple)):
-        raise ValueError("Seat IDs must be a list.")
-
-    if not seat_ids:
+def reserve_seats(user, show_id, seat_ids, booking_id=None):
+    if not isinstance(seat_ids, (list, tuple)) or any(
+        isinstance(pk, bool) or not isinstance(pk, int) or pk <= 0 for pk in seat_ids
+    ):
+        raise ValueError("Invalid seat selection.")
+    seat_ids = sorted(set(seat_ids))
+    if not seat_ids and booking_id is None:
         raise ValueError("Please select at least one seat.")
 
-    try:
-        seat_ids = list(set(int(seat_id) for seat_id in seat_ids))
-    except (ValueError, TypeError):
-        raise ValueError("Invalid seat selection.")
-
-    if any(seat_id <= 0 for seat_id in seat_ids):
-        raise ValueError("Invalid seat selection.")
-
-    # Lock the show to serialize competing reservations.
-    show = Show.objects.select_for_update().select_related(
-        "screen"
-    ).get(id=show_id)
-
-    # Release expired reservations before checking availability.
-    release_expired_seats(show_id=show.id)
-
-    valid_seats = Seat.objects.filter(
-        screen=show.screen,
-        id__in=seat_ids
-    )
-
-    if valid_seats.count() != len(seat_ids):
-        raise ValueError("Invalid seat selection.")
-
-    # Create missing availability records.
-    existing_ids = set(
-        ShowSeat.objects.filter(
-            show=show
-        ).values_list("seat_id", flat=True)
-    )
-
-    missing_seats = [
-        ShowSeat(show=show, seat=seat)
-        for seat in valid_seats
-        if seat.id not in existing_ids
-    ]
-
-    ShowSeat.objects.bulk_create(
-        missing_seats,
-        ignore_conflicts=True
-    )
-
-    # Lock selected seat records.
-    selected_seats = list(
-        ShowSeat.objects.select_for_update()
-        .filter(show=show, seat_id__in=seat_ids)
-        .select_related("seat")
-        .order_by("id")
-    )
-
+    show = lock_show(show_id)
+    if show.show_time <= timezone.now():
+        raise ValueError("This show has already started.")
+    release_expired_seats(show_id)
     now = timezone.now()
+    expiry = now + timedelta(minutes=2)
+    previous = None
+    if booking_id is not None:
+        previous = Booking.objects.filter(
+            pk=booking_id, user=user, show=show, status="PENDING"
+        ).first()
+        if previous is None:
+            raise SeatUnavailableError("Reservation expired or unavailable. Select seats again.")
+        expiry = ShowSeat.objects.filter(
+            booking=previous, status="RESERVED"
+        ).values_list("reserved_until", flat=True).first()
+        if expiry is None or expiry <= now:
+            raise SeatUnavailableError("Reservation expired. Select seats again.")
 
-    for show_seat in selected_seats:
-
-        if show_seat.status == "BOOKED":
-            raise SeatUnavailableError(
-                f"Seat {show_seat.seat.seat_number} is already booked."
-            )
-
-        if show_seat.status == "RESERVED":
-            if (
-                show_seat.reserved_until is None
-                or show_seat.reserved_until > now
-            ):
-                raise SeatUnavailableError(
-                    f"Seat {show_seat.seat.seat_number} is already reserved."
-                )
-
-    # Create pending booking.
-    booking = Booking.objects.create(
-        user=user,
-        show=show,
-        status="PENDING"
+    valid_seats = list(Seat.objects.filter(screen=show.screen, pk__in=seat_ids))
+    if len(valid_seats) != len(seat_ids):
+        raise ValueError("Invalid seat selection.")
+    ShowSeat.objects.bulk_create(
+        [ShowSeat(show=show, seat=seat) for seat in valid_seats],
+        ignore_conflicts=True,
     )
-
-    # Reserve seats for two minutes.
-    expiry_time = now + timedelta(minutes=2)
-
-    for show_seat in selected_seats:
-        show_seat.status = "RESERVED"
-        show_seat.reserved_until = expiry_time
-        show_seat.booking = booking
-
-    ShowSeat.objects.bulk_update(
-        selected_seats,
-        ["status", "reserved_until", "booking"]
-    )
-
+    selected = ShowSeat.objects.filter(show=show, seat_id__in=seat_ids)
+    unavailable = selected.exclude(status="AVAILABLE")
+    if previous:
+        unavailable = unavailable.exclude(booking=previous, status="RESERVED")
+    if unavailable.exists():
+        raise SeatUnavailableError("Some seats are no longer available. Refresh your selection.")
+    if previous:
+        current_ids = set(previous.showseat_set.values_list("seat_id", flat=True))
+        if current_ids == set(seat_ids):
+            return previous
+        previous.showseat_set.update(status="AVAILABLE", reserved_until=None, booking=None)
+        previous.status = "CANCELLED"
+        previous.save(update_fields=["status"])
+    if not seat_ids:
+        return None
+    booking = Booking.objects.create(user=user, show=show, seat_numbers=[seat.seat_number for seat in valid_seats])
+    selected.update(status="RESERVED", reserved_until=expiry, booking=booking)
     return booking

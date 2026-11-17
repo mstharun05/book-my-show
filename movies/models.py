@@ -4,6 +4,7 @@ from urllib.parse import urlparse, parse_qs
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg
 
@@ -62,6 +63,9 @@ class Movie(models.Model):
     release_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [models.Index(fields=["release_date", "id"], name="movie_release_idx")]
+
     @property
     def average_rating(self):
         result = self.reviews.aggregate(
@@ -70,13 +74,23 @@ class Movie(models.Model):
 
         return round(result or 0, 1)
 
+    def clean(self):
+        super().clean()
+        if self.trailer_url and not self.trailer_embed_url:
+            raise ValidationError({"trailer_url": "Enter a valid YouTube video URL."})
+
     @property
     def trailer_embed_url(self):
         if not self.trailer_url:
             return ""
 
-        parsed = urlparse(self.trailer_url)
-        host = (parsed.hostname or "").lower()
+        try:
+            parsed = urlparse(self.trailer_url)
+            host = parsed.hostname
+            if parsed.username is not None or parsed.port is not None:
+                return ""
+        except ValueError:
+            return ""
         video_id = ""
 
         if parsed.scheme not in ("http", "https"):

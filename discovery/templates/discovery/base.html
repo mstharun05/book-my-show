@@ -16,26 +16,34 @@
     <form class="search-box" action="/movies/" method="get">
         <span>⌕</span>
         <input type="text" name="search"
-               placeholder="Search for movies, events, plays..."
+               placeholder="Search for movies..."
                value="{{ search|default:'' }}">
         <button type="submit">Search</button>
     </form>
 
-    <div class="location">📍 Salem</div>
-    <a class="signin" href="/admin/">Sign in</a>
+    <div class="location">Discover entertainment</div>
+    {% if user.is_authenticated %}
+        <a href="{% url 'payments:history' %}">My profile</a>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="signin">Sign out</button>
+        </form>
+    {% else %}
+        <a class="signin" href="{% url 'login' %}">Sign in</a>
+    {% endif %}
 </header>
 
 <nav class="subnav">
     <div>
         <a href="/movies/">Movies</a>
-        <a href="/movies/">Stream</a>
-        <a href="/movies/">Events</a>
-        <a href="/movies/">Plays</a>
-        <a href="/movies/">Sports</a>
-        <a href="/movies/">Activities</a>
+        <a href="{% url 'entertainment_category' 'stream' %}" {% if category == 'stream' %}aria-current="page"{% endif %}>Stream</a>
+        <a href="{% url 'entertainment_category' 'events' %}" {% if category == 'events' %}aria-current="page"{% endif %}>Events</a>
+        <a href="{% url 'entertainment_category' 'plays' %}" {% if category == 'plays' %}aria-current="page"{% endif %}>Plays</a>
+        <a href="{% url 'entertainment_category' 'sports' %}" {% if category == 'sports' %}aria-current="page"{% endif %}>Sports</a>
+        <a href="{% url 'entertainment_category' 'activities' %}" {% if category == 'activities' %}aria-current="page"{% endif %}>Activities</a>
     </div>
     <div>
-        <a href="/dashboard/">Admin Dashboard</a>
+        {% if user.is_staff %}<a href="/dashboard/">Admin Dashboard</a>{% endif %}
     </div>
 </nav>
 

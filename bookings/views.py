@@ -8,7 +8,6 @@ from django.http import JsonResponse
 from django.utils import timezone
 
 from .models import Show, ShowSeat, Seat
-from .services import release_expired_seats
 
 
 def seat_availability(request, show_id):
@@ -23,7 +22,7 @@ def seat_availability(request, show_id):
 
     show_seats = {
         item.seat_id: item
-        for item in ShowSeat.objects.filter(show=show)
+        for item in ShowSeat.objects.filter(show=show).select_related("booking")
     }
 
     now = timezone.now()
@@ -43,10 +42,16 @@ def seat_availability(request, show_id):
         seat_data.append({
             "id": seat.id,
             "seat_number": seat.seat_number,
-            "status": status
+            "status": status,
+            "owned": bool(show_seat and show_seat.booking_id and
+                          request.user.is_authenticated and
+                          show_seat.booking.user_id == request.user.id and status == "RESERVED"),
+            "booking_id": show_seat.booking_id if show_seat and request.user.is_authenticated and show_seat.booking_id and show_seat.booking.user_id == request.user.id and status == "RESERVED" else None,
+            "reserved_until": show_seat.reserved_until if show_seat and status == "RESERVED" else None
         })
 
     return JsonResponse({
+        "server_time": now,
         "show_id": show.id,
         "movie": show.movie.title,
         "ticket_price": str(show.ticket_price),
@@ -71,6 +76,8 @@ def seat_selection_page(request, show_id):
 def reserve_selected_seats(request, show_id):
     try:
         data = json.loads(request.body)
+        if not isinstance(data, dict):
+            raise ValueError("Expected a JSON object.")
         seat_ids = data.get("seat_ids", [])
 
         if not isinstance(seat_ids, list):
@@ -82,14 +89,19 @@ def reserve_selected_seats(request, show_id):
         booking = reserve_seats(
             user=request.user,
             show_id=show_id,
-            seat_ids=seat_ids
+            seat_ids=seat_ids,
+            booking_id=data.get("booking_id")
         )
 
         return JsonResponse({
             "message": "Seats reserved successfully.",
-            "booking_id": booking.id,
-            "expires_in_seconds": 120
+            "booking_id": booking.id if booking else None,
+            "server_time": timezone.now(),
+            "reserved_until": booking.showseat_set.first().reserved_until if booking else None
         }, status=201)
+
+    except Show.DoesNotExist:
+        return JsonResponse({"error": "Show not found."}, status=404)
 
     except SeatUnavailableError as error:
         return JsonResponse({"error": str(error)}, status=409)
