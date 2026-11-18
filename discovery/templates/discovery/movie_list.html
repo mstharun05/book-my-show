@@ -2,16 +2,25 @@
 {% load static %}
 {% block title %}Discover movies | Book My Show{% endblock %}
 {% block content %}
+<section class="feature-carousel" aria-label="Discover entertainment" aria-roledescription="carousel">
+<div class="feature-slide feature-cinema"><div><span class="feature-kicker">THE BIG SCREEN IS CALLING</span><h1>Your next movie.<br>Your favorite seats.</h1><p>Discover films, compare showtimes and make a night of it.</p><a href="#movie-results" class="feature-cta">Explore movies →</a></div><div class="feature-art" aria-hidden="true">CINEMA<span>LIGHTS. CAMERA. YOU.</span></div></div>
+<div class="feature-slide feature-events" hidden><div><span class="feature-kicker">GO OUT. MAKE MEMORIES.</span><h1>Find your<br>next experience.</h1><p>Discover live events and performances in your city.</p><a href="{% url 'entertainment_category' 'events' %}" class="feature-cta">Explore events →</a></div><div class="feature-art" aria-hidden="true">LIVE<span>BE PART OF THE MOMENT.</span></div></div>
+<div class="feature-slide feature-activities" hidden><div><span class="feature-kicker">MAKE TIME FOR SOMETHING NEW</span><h1>A little adventure.<br>A great day out.</h1><p>Browse activities and workshops for your next outing.</p><a href="{% url 'entertainment_category' 'activities' %}" class="feature-cta">Explore activities →</a></div><div class="feature-art" aria-hidden="true">GO<span>MORE THAN AN ORDINARY DAY.</span></div></div>
+<button type="button" class="carousel-arrow carousel-prev" aria-label="Previous banner">‹</button><button type="button" class="carousel-arrow carousel-next" aria-label="Next banner">›</button>
+<div class="carousel-dots"><button type="button" aria-label="Movie banner" aria-pressed="true"></button><button type="button" aria-label="Events banner" aria-pressed="false"></button><button type="button" aria-label="Activities banner" aria-pressed="false"></button></div>
+</section>
 <section class="movie-section">
-<h1>Discover movies</h1>
+<div class="section-heading"><div><h1>Discover movies{% if selected_city %} in {{ selected_city }}{% endif %}</h1><p>Find the right film, time and seat for you.</p></div><a href="#movie-results">See all ↓</a></div>
+<details class="discovery-filter-details" {% if request.GET %}open{% endif %}><summary>Search & filter movies</summary>
 <form method="get" id="discovery-filters" class="filter-panel" style="flex-wrap:wrap;align-items:end">
 {% for field in form %}
 <label style="display:flex;flex-direction:column;gap:6px;min-width:160px">{{ field.label }}{{ field }}</label>
 {% endfor %}
 <button type="submit">Apply filters</button><a href="{% url 'discovery:movie_list' %}">Clear filters</a>
 </form>
+</details>
 <p id="filter-status" role="status" aria-live="polite"></p>
-<div id="discovery-results">{% include "discovery/results.html" %}</div>
+<div id="movie-results"><div id="discovery-results">{% include "discovery/results.html" %}</div></div>
 </section>
 <script src="{% static 'discovery/filters.js' %}"></script>
 {% endblock %}

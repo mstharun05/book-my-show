@@ -7,21 +7,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Book My Show{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'discovery/style.css' %}">
+    <link rel="stylesheet" href="{% static 'discovery/light.css' %}">
 </head>
 <body>
 
 <header class="topbar">
     <a class="brand" href="/movies/">book<span>my</span>show</a>
 
-    <form class="search-box" action="/movies/" method="get">
+    <form class="search-box" action="{% url 'search_all' %}" method="get" role="search">
         <span>⌕</span>
-        <input type="text" name="search"
-               placeholder="Search for movies..."
+        <input type="search" name="q" aria-label="Search movies and experiences"
+               placeholder="Search for Movies, Events, Plays, Sports and Activities"
                value="{{ search|default:'' }}">
         <button type="submit">Search</button>
     </form>
 
-    <div class="location">Discover entertainment</div>
+    <button type="button" class="location city-trigger" aria-haspopup="dialog" data-open-city>{{ selected_city|default:'Choose city' }} <span aria-hidden="true">⌄</span></button>
     {% if user.is_authenticated %}
         <a href="{% url 'payments:history' %}">My profile</a>
         <form method="post" action="{% url 'logout' %}">
@@ -47,6 +48,23 @@
     </div>
 </nav>
 
+<dialog id="city-dialog" aria-labelledby="city-dialog-title">
+    <div class="city-dialog-heading"><h2 id="city-dialog-title">Choose your city</h2><button type="button" data-close-city aria-label="Close city selector">×</button></div>
+    <label class="city-search-label" for="city-search">Search for your city</label>
+    <input id="city-search" type="search" placeholder="Search for your city" autocomplete="off">
+    <button type="button" id="detect-city">⌖ Detect my location</button>
+    <p id="location-status" role="status" aria-live="polite"></p>
+    <p class="city-intro">Popular cities</p>
+    <form method="post" action="{% url 'select_city' %}" id="city-form">
+        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <div class="city-grid">{% for city in city_options %}<button type="submit" name="city" value="{{ city }}" class="city-choice" data-city="{{ city }}" {% if forloop.counter > 10 %}hidden{% endif %}><span class="city-icon" aria-hidden="true">♧</span>{{ city }}</button>{% endfor %}</div>
+        <p id="city-empty" hidden>No matching city. Browse all cities or choose All locations.</p>
+        <div class="city-actions"><button type="button" id="all-cities">View all cities</button><button type="submit" name="city" value="">All locations</button></div>
+    </form>
+    <p class="city-note">Listings depend on the shows and experiences available in your selected city.</p>
+</dialog>
+{{ city_coordinates|json_script:'city-coordinates' }}
+
 <main>
     {% block content %}{% endblock %}
 </main>
@@ -56,6 +74,6 @@
     <p>Movies, entertainment and unforgettable experiences.</p>
     <p>© 2026 Book My Show Project</p>
 </footer>
-
+<script src="{% static 'discovery/site.js' %}" defer></script>
 </body>
 </html>

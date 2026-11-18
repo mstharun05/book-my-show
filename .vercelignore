@@ -1,0 +1,14 @@
+.git
+venv
+.venv
+tmp
+*.local.json
+.env*
+db.sqlite3
+ADMIN_DASHBOARD_REPORT.md
+staticfiles
+media
+__pycache__
+*.pyc
+scripts/configure_live_worker.py
+scripts/configure_ticket_email.py

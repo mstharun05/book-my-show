@@ -4,6 +4,15 @@ import json
 from urllib.parse import urlsplit
 import dj_database_url
 
+# The free-threaded local Python build uses the installed PostgreSQL libpq DLL.
+# Restrict this fallback to Windows; hosted Linux uses psycopg[binary].
+if os.name == 'nt':
+    pg_root = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'PostgreSQL'
+    if pg_root.exists():
+        installations = sorted(pg_root.glob('*/bin/libpq.dll'), reverse=True)
+        if installations:
+            os.environ['PATH'] = str(installations[0].parent) + os.pathsep + os.environ.get('PATH', '')
+
 private_path = BASE_DIR / 'tmp' / 'live-worker.json'
 private = json.loads(private_path.read_text(encoding='utf-8'))
 db_url = private['DATABASE_URL']

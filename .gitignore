@@ -10,3 +10,5 @@ ADMIN_DASHBOARD_REPORT.md
 tmp/
 celerybeat-schedule*
 delivery.local.json
+.vercel/
+.env.*

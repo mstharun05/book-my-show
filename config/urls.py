@@ -5,10 +5,14 @@ from django.contrib.auth import views as auth_views
 from .account_views import signup, account_email
 from discovery.catalog import category, experience_detail
 from .health import health
+from discovery.locations import select_city
+from discovery.catalog import search_all
 from django.urls import path, include
 from django.views.generic import RedirectView
 
 urlpatterns = [
+    path('location/', select_city, name='select_city'),
+    path('search/', search_all, name='search_all'),
     path('health/', health, name='health'),
     path('explore/<str:category>/', category, name='entertainment_category'),
     path('experiences/<int:pk>/', experience_detail, name='experience_detail'),

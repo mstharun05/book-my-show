@@ -12,7 +12,7 @@ def category(request, category):
     if category != 'stream' and category not in CATEGORIES:
         raise Http404
     search = request.GET.get('q', '').strip()[:200]
-    city = request.GET.get('city', '').strip()[:100]
+    city = request.GET.get('city', request.session.get('selected_city', '')).strip()[:100]
     if category == 'stream':
         items = Movie.objects.exclude(trailer_url='').order_by('-release_date', '-pk')
     else:
@@ -33,3 +33,17 @@ def category(request, category):
 def experience_detail(request, pk):
     item = get_object_or_404(Experience, pk=pk, published=True)
     return render(request, 'discovery/experience_detail.html', {'item': item, 'category': item.category, 'upcoming': item.starts_at >= timezone.now()})
+
+
+def search_all(request):
+    from .views import filtered_movies
+    query = request.GET.get('q', '').strip()[:200]
+    city = request.session.get('selected_city', '')
+    movies = filtered_movies({'search': query, 'city': city}) if query else Movie.objects.none()
+    experiences = Experience.objects.filter(published=True, starts_at__gte=timezone.now(), title__icontains=query) if query else Experience.objects.none()
+    if city:
+        experiences = experiences.filter(city__iexact=city)
+    return render(request, 'discovery/search.html', {
+        'search': query, 'movie_page': Paginator(movies, 8).get_page(request.GET.get('mpage')),
+        'experience_page': Paginator(experiences, 8).get_page(request.GET.get('epage')),
+    })

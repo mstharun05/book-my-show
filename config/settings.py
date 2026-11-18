@@ -47,10 +47,15 @@ RENDER_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_HOSTNAME)
     CSRF_TRUSTED_ORIGINS.append('https://' + RENDER_HOSTNAME)
-if os.environ.get('RENDER') and not os.environ.get('SECRET_KEY'):
+HOSTED = bool(os.environ.get('RENDER') or os.environ.get('VERCEL'))
+for hostname in (os.environ.get('VERCEL_URL'), os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')):
+    if hostname:
+        ALLOWED_HOSTS.append(hostname)
+        CSRF_TRUSTED_ORIGINS.append('https://' + hostname)
+if HOSTED and not os.environ.get('SECRET_KEY'):
     raise RuntimeError('Set SECRET_KEY before deploying.')
-SECURE_SSL_REDIRECT = bool(os.environ.get('RENDER')) and not DEBUG
-SECURE_HSTS_SECONDS = 3600 if os.environ.get('RENDER') else 0
+SECURE_SSL_REDIRECT = HOSTED and not DEBUG
+SECURE_HSTS_SECONDS = 3600 if HOSTED else 0
 
 # Applications
 INSTALLED_APPS = [
@@ -93,6 +98,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "discovery.locations.location_context",
             ],
         },
     },
@@ -102,6 +108,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
 DATABASE_URL = os.environ.get("DATABASE_URL")
+if os.environ.get('VERCEL') and not DATABASE_URL:
+    raise RuntimeError('Vercel requires a persistent DATABASE_URL.')
 
 if DATABASE_URL:
     DATABASES = {
@@ -111,6 +119,9 @@ if DATABASE_URL:
             conn_health_checks=True
         )
     }
+    if os.environ.get('VERCEL'):
+        DATABASES['default']['CONN_MAX_AGE'] = 0
+        DATABASES['default'].setdefault('OPTIONS', {})['sslmode'] = 'require'
 else:
     DATABASES = {
         "default": {
@@ -181,7 +192,8 @@ SECURE_PROXY_SSL_HEADER = (
 
 RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", razorpay_local.get("RAZORPAY_WEBHOOK_SECRET", ""))
 
-SITE_URL = os.environ.get('SITE_URL', 'https://' + RENDER_HOSTNAME if RENDER_HOSTNAME else 'http://127.0.0.1:8002').rstrip('/')
+PUBLIC_HOSTNAME = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL') or RENDER_HOSTNAME or os.environ.get('VERCEL_URL')
+SITE_URL = os.environ.get('SITE_URL', 'https://' + PUBLIC_HOSTNAME if PUBLIC_HOSTNAME else 'http://127.0.0.1:8002').rstrip('/')
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', local_delivery.get('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0'))
 if CELERY_BROKER_URL == 'local-sqlite':
     (BASE_DIR / 'tmp').mkdir(exist_ok=True)

@@ -76,13 +76,16 @@ def recommended_movies(request, movies):
 
 
 def movie_list(request):
-    form = DiscoveryForm(request.GET)
+    params = request.GET.copy()
+    if 'city' not in params and request.session.get('selected_city'):
+        params['city'] = request.session['selected_city']
+    form = DiscoveryForm(params)
     valid = form.is_valid()
     movies = filtered_movies(form.cleaned_data) if valid else Movie.objects.none()
     paginator = Paginator(movies, 8)
     page = paginator.get_page(request.GET.get("page"))
     recommended, personalized = recommended_movies(request, movies) if valid else ([], False)
-    query = request.GET.copy()
+    query = params.copy()
     query.pop("page", None)
     query.pop("partial", None)
     context = {

@@ -1,0 +1,14 @@
+{% extends 'discovery/base.html' %}
+{% block title %}Search | Book My Show{% endblock %}
+{% block content %}
+<section class="catalog-shell">
+<h1>{% if search %}Results for “{{ search }}”{% else %}Find your next experience{% endif %}</h1>
+<p class="catalog-count">{% if selected_city %}In {{ selected_city }}{% else %}Across all locations{% endif %}</p>
+<h2>Movies · {{ movie_page.paginator.count }}</h2>
+<div class="movie-grid">{% for movie in movie_page %}{% include 'discovery/movie_card.html' %}{% empty %}<p class="empty-state">{% if search %}No matching movies.{% else %}Enter a title in the search bar above.{% endif %}</p>{% endfor %}</div>
+{% if movie_page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Movie search pages">{% if movie_page.has_previous %}<a href="?q={{ search|urlencode }}&mpage={{ movie_page.previous_page_number }}">Previous</a>{% endif %}<span>{{ movie_page.number }} / {{ movie_page.paginator.num_pages }}</span>{% if movie_page.has_next %}<a href="?q={{ search|urlencode }}&mpage={{ movie_page.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+<h2 class="search-experiences-title">Events, Plays, Sports & Activities · {{ experience_page.paginator.count }}</h2>
+<div class="catalog-grid">{% for item in experience_page %}<article class="catalog-card"><a href="{% url 'experience_detail' item.pk %}">{% if item.poster %}<img src="{{ item.poster }}" alt="{{ item.title }}" loading="lazy">{% endif %}<div class="catalog-card-body"><h3>{{ item.title }}</h3><p>{{ item.get_category_display }} · {{ item.city }}</p><p>{{ item.starts_at|date:'D, d M · g:i A' }}</p><span class="catalog-action">View details →</span></div></a></article>{% empty %}<p>No matching experiences.</p>{% endfor %}</div>
+{% if experience_page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Experience search pages">{% if experience_page.has_previous %}<a href="?q={{ search|urlencode }}&epage={{ experience_page.previous_page_number }}">Previous</a>{% endif %}<span>{{ experience_page.number }} / {{ experience_page.paginator.num_pages }}</span>{% if experience_page.has_next %}<a href="?q={{ search|urlencode }}&epage={{ experience_page.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+</section>
+{% endblock %}

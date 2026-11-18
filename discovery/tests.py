@@ -76,3 +76,30 @@ class EntertainmentTests(TestCase):
         item.save()
         self.assertNotContains(self.client.get('/explore/events/'), 'Evening Concert')
         self.assertContains(self.client.get(f'/experiences/{item.pk}/'), 'This experience has ended.')
+
+class CityNavigationTests(TestCase):
+    def test_city_selection_persists_and_rejects_external_redirect(self):
+        response = self.client.post('/location/', {'city':'Chennai','next':'https://example.com/'})
+        self.assertRedirects(response, '/movies/?city=Chennai')
+        self.assertEqual(self.client.session['selected_city'], 'Chennai')
+        self.assertContains(self.client.get('/explore/events/'), 'Chennai')
+        self.client.post('/location/', {'city':''})
+        self.assertEqual(self.client.session['selected_city'], '')
+
+    def test_city_validation_and_get_are_safe(self):
+        self.assertEqual(self.client.get('/location/').status_code, 405)
+        self.assertEqual(self.client.post('/location/', {'city':'<script>'}).status_code, 400)
+
+    def test_search_both_catalogs_and_hide_drafts(self):
+        from movies.models import Movie
+        from .models import Experience
+        from django.utils import timezone
+        from datetime import timedelta
+        Movie.objects.create(title='Festival Film', duration=100, release_date=timezone.localdate())
+        Experience.objects.create(title='Festival Evening', category='events', city='Salem', venue='Hall', starts_at=timezone.now()+timedelta(days=1), published=True)
+        Experience.objects.create(title='Festival Draft', category='events', city='Salem', venue='Hall', starts_at=timezone.now()+timedelta(days=1), published=False)
+        response=self.client.get('/search/?q=festival')
+        self.assertContains(response,'Festival Film')
+        self.assertContains(response,'Festival Evening')
+        self.assertNotContains(response,'Festival Draft')
+        self.assertEqual(self.client.get('/search/').status_code, 200)
