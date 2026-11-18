@@ -23,6 +23,8 @@ def movie_detail(request, movie_id):
     upcoming_shows = movie.show_set.filter(show_time__gt=now).select_related(
         "screen__theater"
     ).order_by("show_time", "pk")
+    if request.session.get("selected_city"):
+        upcoming_shows = upcoming_shows.filter(screen__theater__city__iexact=request.session["selected_city"])
 
     reviews = movie.reviews.select_related("user").order_by("-created_at")
 

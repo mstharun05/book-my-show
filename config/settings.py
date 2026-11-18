@@ -194,6 +194,8 @@ RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", razorpay_loc
 
 PUBLIC_HOSTNAME = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL') or RENDER_HOSTNAME or os.environ.get('VERCEL_URL')
 SITE_URL = os.environ.get('SITE_URL', 'https://' + PUBLIC_HOSTNAME if PUBLIC_HOSTNAME else 'http://127.0.0.1:8002').rstrip('/')
+if os.environ.get('VERCEL') and os.environ.get('VERCEL_PROJECT_PRODUCTION_URL'):
+    SITE_URL = 'https://' + os.environ['VERCEL_PROJECT_PRODUCTION_URL']
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', local_delivery.get('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0'))
 if CELERY_BROKER_URL == 'local-sqlite':
     (BASE_DIR / 'tmp').mkdir(exist_ok=True)
